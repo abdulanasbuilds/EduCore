@@ -56,10 +56,7 @@ export function formatPhoneNumber(phone: string): string {
     return `+${cleaned}`;
   }
   if (cleaned.startsWith("0")) {
-    return `+${cleaned.substring(1)}`;
-  }
-  if (cleaned.startsWith("233")) {
-    return `+${cleaned}`;
+    return `+233${cleaned.substring(1)}`;
   }
   return `+233${cleaned}`;
 }

@@ -58,7 +58,7 @@ export default function ResetPasswordPage() {
     <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-primary">EduCore</h1>
+          <h1 className="text-3xl font-bold text-primary-800">EduCore</h1>
         </div>
 
         <div className="bg-white rounded-lg shadow-lg p-8">
@@ -113,7 +113,7 @@ export default function ResetPasswordPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-primary text-primary-foreground py-2 rounded-md font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                  className="w-full bg-primary-800 text-white py-2.5 rounded-md font-medium hover:bg-primary-700 disabled:opacity-50 transition-colors min-h-[44px]"
                 >
                   {loading ? "Updating..." : "Update Password"}
                 </button>

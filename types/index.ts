@@ -333,6 +333,17 @@ export interface AnnouncementWithCreator extends Announcement {
   class?: Class | null;
 }
 
+export interface ClassSubjectWithDetails extends ClassSubject {
+  subject: Subject;
+  teacher: Profile;
+  class: Class;
+}
+
+export interface StudentClassHistoryWithDetails extends StudentClassHistory {
+  class: Class;
+  academic_year: AcademicYear;
+}
+
 // ==========================================
 // Form / Action Types
 // ==========================================
@@ -371,6 +382,13 @@ export interface GradeEntry {
   studentId: string;
   studentName: string;
   score: number | null;
+  remarks: string;
+}
+
+export interface GradingScale {
+  minScore: number;
+  maxScore: number;
+  grade: string;
   remarks: string;
 }
 

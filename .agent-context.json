@@ -1,0 +1,17 @@
+{
+  "project": "EduCore",
+  "tech_stack": {
+    "framework": "Next.js 15 (App Router)",
+    "language": "TypeScript",
+    "styling": "Tailwind CSS + Framer Motion",
+    "ui_components": "Radix UI (shadcn/ui)",
+    "backend": "Supabase (Auth, DB, Storage)",
+    "forms": "React Hook Form + Zod",
+    "external_services": ["Twilio", "Cloudinary", "Resend", "Upstash"]
+  },
+  "active_tracks": [],
+  "last_verification": {
+    "lint": null,
+    "type_check": null
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "framework": "nextjs",
+  "buildCommand": "next build",
+  "devCommand": "next dev",
+  "installCommand": "npm install",
+  "crons": [
+    {
+      "path": "/api/cron/weekly-digest",
+      "schedule": "0 19 * * 0"
+    },
+    {
+      "path": "/api/cron/fee-reminders",
+      "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/monthly-report",
+      "schedule": "0 8 1 * *"
+    },
+    {
+      "path": "/api/cron/keep-alive",
+      "schedule": "0 12 * * *"
+    }
+  ]
+}

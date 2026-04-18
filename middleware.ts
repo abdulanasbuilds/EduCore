@@ -1,153 +1,133 @@
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
-import { NextResponse, type NextRequest } from "next/server";
-import type { Database, UserRole } from "@/types";
-
-const roleRedirects: Record<UserRole, string> = {
-  SUPER_ADMIN: "/super-admin",
-  SCHOOL_ADMIN: "/admin",
-  CLASS_TEACHER: "/teacher",
-  SUBJECT_TEACHER: "/subject-teacher",
-  BURSAR: "/bursar",
-  PARENT: "/parent",
-  STUDENT: "/student",
-};
+import { createServerClient } from "@supabase/ssr"
+import { NextResponse, type NextRequest } from "next/server"
 
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-
-  // 1. Handle missing environment variables gracefully
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if ((!supabaseUrl || !supabaseAnonKey || supabaseUrl === 'your_supabase_project_url') && pathname !== "/setup") {
-    return NextResponse.redirect(new URL("/setup", request.url));
+  // If Supabase is not configured, redirect to setup page
+  // This handles fresh deployments where env vars not yet added
+  if (
+    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_URL === 'your_supabase_project_url'
+  ) {
+    // Allow the setup page itself to load
+    if (request.nextUrl.pathname === "/setup") {
+      return NextResponse.next()
+    }
+    // Redirect everything else to setup
+    return NextResponse.redirect(new URL("/setup", request.url))
   }
 
-  // If we are on /setup and have the keys, redirect to home
-  if (supabaseUrl && supabaseAnonKey && supabaseUrl !== 'your_supabase_project_url' && pathname === "/setup") {
-    return NextResponse.redirect(new URL("/", request.url));
-  }
+  let supabaseResponse = NextResponse.next({
+    request,
+  })
 
-  let response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
-  });
-
-  // 2. Initialize Supabase client
-  const supabase = createServerClient<Database>(
-    supabaseUrl!,
-    supabaseAnonKey!,
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
         getAll() {
-          return request.cookies.getAll();
+          return request.cookies.getAll()
         },
-        setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
-          cookiesToSet.forEach(({ name, value, options }) =>
+        setAll(cookiesToSet: any) {
+          cookiesToSet.forEach(({ name, value }: any) =>
             request.cookies.set(name, value)
-          );
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
-          );
+          )
+          supabaseResponse = NextResponse.next({ request })
+          cookiesToSet.forEach(({ name, value, options }: any) =>
+            supabaseResponse.cookies.set(name, value, options)
+          )
         },
       },
     }
-  );
+  )
 
-  // 3. Refresh session and get user
-  const { data: { user } } = await supabase.auth.getUser();
+  // IMPORTANT: Always use getUser() not getSession()
+  const { data: { user } } = await supabase.auth.getUser()
 
-  // 4. Handle Auth logic
-  const isLoginPage = pathname === "/login";
-  const isAuthPage = pathname.startsWith("/login") || pathname.startsWith("/forgot-password") || pathname.startsWith("/reset-password");
-  const isSetupPage = pathname === "/setup";
-  const isLandingPage = pathname === "/";
-  const isApiRoute = pathname.startsWith("/api");
+  const path = request.nextUrl.pathname
 
-  // Redirect to setup if missing keys (already handled above mostly, but for safety)
-  if (!supabaseUrl && !isSetupPage) {
-    return NextResponse.redirect(new URL("/setup", request.url));
-  }
-
-  // If logged in and visiting login, redirect to dashboard
-  if (user && isLoginPage) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-
-    if (profile) {
-      const userRole = (profile as any).role as UserRole;
-      return NextResponse.redirect(new URL(roleRedirects[userRole] || "/", request.url));
-    }
-  }
-
-  // Protect dashboard routes
+  // Define protected routes and their required roles
   const protectedRoutes = [
-    { prefix: "/admin", roles: ["SCHOOL_ADMIN", "SUPER_ADMIN"] },
-    { prefix: "/teacher", roles: ["CLASS_TEACHER", "SUBJECT_TEACHER"] },
-    { prefix: "/subject-teacher", roles: ["SUBJECT_TEACHER"] },
-    { prefix: "/bursar", roles: ["BURSAR"] },
-    { prefix: "/parent", roles: ["PARENT"] },
-    { prefix: "/student", roles: ["STUDENT"] },
-    { prefix: "/super-admin", roles: ["SUPER_ADMIN"] },
-  ];
+    { pattern: /^\/admin/, roles: ["SCHOOL_ADMIN", "SUPER_ADMIN"] },
+    { pattern: /^\/teacher/, roles: ["CLASS_TEACHER", "SUBJECT_TEACHER"] },
+    { pattern: /^\/subject-teacher/, roles: ["SUBJECT_TEACHER", "CLASS_TEACHER"] },
+    { pattern: /^\/bursar/, roles: ["BURSAR"] },
+    { pattern: /^\/parent/, roles: ["PARENT"] },
+    { pattern: /^\/student/, roles: ["STUDENT"] },
+    { pattern: /^\/super-admin/, roles: ["SUPER_ADMIN"] },
+  ]
 
-  const matchedRoute = protectedRoutes.find(route => pathname.startsWith(route.prefix));
+  const isProtected = protectedRoutes.some(r => r.pattern.test(path))
+  const isAuthPage = path.startsWith("/login") || 
+                     path.startsWith("/forgot-password") ||
+                     path.startsWith("/reset-password")
 
-  if (matchedRoute) {
-    if (!user) {
-      const loginUrl = new URL("/login", request.url);
-      loginUrl.searchParams.set("redirect", pathname);
-      return NextResponse.redirect(loginUrl);
-    }
+  // Not logged in, trying to access protected route
+  if (isProtected && !user) {
+    const redirectUrl = new URL("/login", request.url)
+    redirectUrl.searchParams.set("redirect", path)
+    return NextResponse.redirect(redirectUrl)
+  }
 
+  // Logged in but trying to access login page
+  if (user && isAuthPage) {
+    // Get user role from profiles table
     const { data: profile } = await supabase
       .from("profiles")
       .select("role")
       .eq("id", user.id)
-      .single();
+      .single()
 
-    if (!profile || !matchedRoute.roles.includes((profile as any).role)) {
-      // Unauthorized for this specific role
-      const userRole = (profile as any)?.role as UserRole;
-      return NextResponse.redirect(new URL(userRole ? (roleRedirects[userRole] || "/") : "/login", request.url));
+    const roleRedirects: Record<string, string> = {
+      SUPER_ADMIN: "/super-admin",
+      SCHOOL_ADMIN: "/admin",
+      CLASS_TEACHER: "/teacher",
+      SUBJECT_TEACHER: "/subject-teacher",
+      BURSAR: "/bursar",
+      PARENT: "/parent",
+      STUDENT: "/student",
     }
+
+    const destination = (profile as any)?.role 
+      ? roleRedirects[(profile as any).role] ?? "/"
+      : "/"
+
+    return NextResponse.redirect(new URL(destination, request.url))
   }
 
-  // Handle root redirect for logged in users
-  if (isLandingPage && user) {
-      const { data: profile } = await supabase
+  // Logged in, check role matches the route
+  if (user && isProtected) {
+    const { data: profile } = await supabase
       .from("profiles")
       .select("role")
       .eq("id", user.id)
-      .single();
+      .single()
 
-    if (profile) {
-      const userRole = (profile as any).role as UserRole;
-      return NextResponse.redirect(new URL(roleRedirects[userRole] || "/", request.url));
+    const matchedRoute = protectedRoutes.find(r => r.pattern.test(path))
+
+    if (matchedRoute && (profile as any)?.role && 
+        !matchedRoute.roles.includes((profile as any).role)) {
+      // Role doesn't match — redirect to their correct dashboard
+      const roleRedirects: Record<string, string> = {
+        SUPER_ADMIN: "/super-admin",
+        SCHOOL_ADMIN: "/admin",
+        CLASS_TEACHER: "/teacher",
+        SUBJECT_TEACHER: "/subject-teacher",
+        BURSAR: "/bursar",
+        PARENT: "/parent",
+        STUDENT: "/student",
+      }
+      const destination = roleRedirects[(profile as any).role] ?? "/"
+      return NextResponse.redirect(new URL(destination, request.url))
     }
   }
 
-  return response;
+  return supabaseResponse
 }
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * Feel free to modify this pattern to include more paths.
-     */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|public|api/webhooks).*)",
   ],
-};
+}

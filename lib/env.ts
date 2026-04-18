@@ -25,20 +25,21 @@ const envSchema = z.object({
 
   // App Config
   NEXT_PUBLIC_APP_URL: z.string().url().default("http://localhost:3000"),
+  NEXT_PUBLIC_SCHOOL_NAME: z.string().default("EduCore School"),
   CRON_SECRET: z.string().min(1).optional(),
 });
 
-type EnvConfig = z.infer<typeof envSchema>;
+export type EnvConfig = z.infer<typeof envSchema>;
 
 function parseEnv(): EnvConfig {
   const result = envSchema.safeParse(process.env);
 
   if (!result.success) {
-    console.error("❌ Invalid environment variables:");
+    console.error("Invalid environment variables:");
     result.error.issues.forEach((issue) => {
       console.error(`  - ${issue.path.join(".")}: ${issue.message}`);
     });
-    throw new Error("Invalid environment configuration");
+    throw new Error("Invalid environment configuration. Check your .env file.");
   }
 
   return result.data;

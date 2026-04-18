@@ -1,16 +1,10 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createServerClient } from "@supabase/ssr";
 import type { UserRole } from "@/types";
 
-interface RouteConfig {
-  pathRegex: RegExp;
-  allowedRoles: UserRole[];
-  redirectTo?: string;
-}
-
 const roleRedirects: Record<UserRole, string> = {
-  SUPER_ADMIN: "/admin",
+  SUPER_ADMIN: "/super-admin",
   SCHOOL_ADMIN: "/admin",
   CLASS_TEACHER: "/teacher",
   SUBJECT_TEACHER: "/subject-teacher",
@@ -23,21 +17,30 @@ const publicRoutes = [
   "/login",
   "/forgot-password",
   "/reset-password",
-  "/api/",
+  "/auth/signout",
 ];
 
+interface RouteConfig {
+  pathRegex: RegExp;
+  allowedRoles: UserRole[];
+}
+
 const routeConfigs: RouteConfig[] = [
+  { pathRegex: /^\/super-admin(\/|$)/, allowedRoles: ["SUPER_ADMIN"] },
   { pathRegex: /^\/admin(\/|$)/, allowedRoles: ["SUPER_ADMIN", "SCHOOL_ADMIN"] },
   { pathRegex: /^\/teacher(\/|$)/, allowedRoles: ["CLASS_TEACHER"] },
   { pathRegex: /^\/subject-teacher(\/|$)/, allowedRoles: ["SUBJECT_TEACHER"] },
   { pathRegex: /^\/bursar(\/|$)/, allowedRoles: ["BURSAR"] },
   { pathRegex: /^\/parent(\/|$)/, allowedRoles: ["PARENT"] },
   { pathRegex: /^\/student(\/|$)/, allowedRoles: ["STUDENT"] },
-  { pathRegex: /^\/super-admin(\/|$)/, allowedRoles: ["SUPER_ADMIN"] },
 ];
 
 function isPublicRoute(path: string): boolean {
   return publicRoutes.some((route) => path.startsWith(route));
+}
+
+function isApiRoute(path: string): boolean {
+  return path.startsWith("/api/");
 }
 
 function getRouteConfig(path: string): RouteConfig | undefined {
@@ -47,11 +50,49 @@ function getRouteConfig(path: string): RouteConfig | undefined {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (isPublicRoute(pathname)) {
-    return NextResponse.next();
+  // Allow public routes and API routes
+  if (isPublicRoute(pathname) || isApiRoute(pathname)) {
+    // Still refresh session for public routes
+    const response = NextResponse.next();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll();
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              response.cookies.set(name, value, options);
+            });
+          },
+        },
+      }
+    );
+    await supabase.auth.getUser();
+    return response;
   }
 
-  const supabase = await createClient();
+  // Create response to pass cookies
+  const response = NextResponse.next();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            response.cookies.set(name, value, options);
+          });
+        },
+      },
+    }
+  );
+
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 
   if (authError || !user) {
@@ -60,30 +101,43 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("role, school_id")
-    .eq("user_id", user.id)
-    .single();
+  // Root path redirect
+  if (pathname === "/") {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
 
-  if (profileError || !profile) {
+    if (profile) {
+      const userRole = profile.role as UserRole;
+      return NextResponse.redirect(new URL(roleRedirects[userRole] || "/login", request.url));
+    }
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
+  // Check role-based access
   const routeConfig = getRouteConfig(pathname);
-
   if (routeConfig) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role, school_id")
+      .eq("id", user.id)
+      .single();
+
+    if (!profile) {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
+
     const userRole = profile.role as UserRole;
-    const redirectTo = request.nextUrl.pathname;
 
     if (!routeConfig.allowedRoles.includes(userRole)) {
       const targetUrl = new URL(roleRedirects[userRole] || "/login", request.url);
-      targetUrl.searchParams.set("redirect", redirectTo);
       return NextResponse.redirect(targetUrl);
     }
   }
 
-  return NextResponse.next();
+  return response;
 }
 
 export const config = {

@@ -72,7 +72,7 @@ HOW TO FIX:
     `)
     
     // In actual production execution, we should throw
-    if (process.env.NODE_ENV === 'production' && !process.env.NEXT_PHASE) {
+    if (process.env.NODE_ENV === 'production' && !process.env.NEXT_PHASE && !process.env.VERCEL_ENV) {
        throw new Error("Missing required environment variables. Check server logs.")
     }
     

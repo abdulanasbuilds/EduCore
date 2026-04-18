@@ -3,16 +3,21 @@ import { createBrowserClient } from "@supabase/ssr"
 import { env } from "@/lib/env"
 import type { Database } from "@/types"
 
-let client: ReturnType<typeof createBrowserClient<Database>> | null = null
+let client: any = null
 
 export function createClient() {
   if (typeof window === 'undefined') return {} as any;
 
   if (!client) {
-    client = createBrowserClient<Database>(
-      env.NEXT_PUBLIC_SUPABASE_URL,
-      env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    )
+    const url = env.NEXT_PUBLIC_SUPABASE_URL
+    const key = env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+    if (!url || !key) {
+        // Fallback for build time safety
+        return {} as any
+    }
+
+    client = createBrowserClient<Database>(url, key)
   }
   return client
 }

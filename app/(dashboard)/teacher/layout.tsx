@@ -6,7 +6,7 @@ export default async function TeacherLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
+  const supabase = (await createClient()) as any;
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) redirect("/login");
@@ -15,7 +15,7 @@ export default async function TeacherLayout({
     .from("profiles")
     .select("role")
     .eq("id", user.id)
-    .single() as any;
+    .single();
 
   if (!profile || !["CLASS_TEACHER", "SUPER_ADMIN", "SCHOOL_ADMIN"].includes(profile.role)) {
     redirect("/login");

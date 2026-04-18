@@ -5,10 +5,16 @@ import type { Database } from "@/types"
 
 export async function createClient() {
   const cookieStore = await cookies()
+  const url = env.NEXT_PUBLIC_SUPABASE_URL
+  const key = env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+  if (!url || !key) {
+      return {} as any
+  }
   
   return createServerClient<Database>(
-    env.NEXT_PUBLIC_SUPABASE_URL,
-    env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    url,
+    key,
     {
       cookies: {
         getAll() {
@@ -20,8 +26,7 @@ export async function createClient() {
               cookieStore.set(name, value, options)
             )
           } catch {
-            // Called from Server Component — cookies will be 
-            // set by middleware
+            // Called from Server Component
           }
         },
       },

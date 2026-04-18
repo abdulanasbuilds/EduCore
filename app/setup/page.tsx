@@ -1,74 +1,130 @@
-"use client";
-
-import Link from "next/link";
-import { CheckCircle2, XCircle, RefreshCw } from "lucide-react";
-
 export default function SetupPage() {
-  const envs = {
-    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_URL !== 'your_supabase_project_url',
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY !== 'your_supabase_anon_key',
-    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.SUPABASE_SERVICE_ROLE_KEY !== 'your_supabase_service_role_key',
-  };
-
-  const isConfigured = Object.values(envs).every(Boolean);
+  const vars = [
+    {
+      name: "NEXT_PUBLIC_SUPABASE_URL",
+      description: "Your Supabase project URL",
+      where: "supabase.com → Project → Settings → API → Project URL",
+      required: true,
+    },
+    {
+      name: "NEXT_PUBLIC_SUPABASE_ANON_KEY", 
+      description: "Supabase anonymous/public key",
+      where: "supabase.com → Project → Settings → API → anon/public",
+      required: true,
+    },
+    {
+      name: "SUPABASE_SERVICE_ROLE_KEY",
+      description: "Supabase service role key (keep secret)",
+      where: "supabase.com → Project → Settings → API → service_role",
+      required: true,
+    },
+    {
+      name: "TWILIO_ACCOUNT_SID",
+      description: "Twilio Account SID for SMS",
+      where: "twilio.com → Console Dashboard",
+      required: false,
+    },
+    {
+      name: "TWILIO_AUTH_TOKEN",
+      description: "Twilio Auth Token",
+      where: "twilio.com → Console Dashboard",
+      required: false,
+    },
+    {
+      name: "TWILIO_PHONE_NUMBER",
+      description: "Your Twilio phone number",
+      where: "twilio.com → Phone Numbers",
+      required: false,
+    },
+    {
+      name: "RESEND_API_KEY",
+      description: "Resend API key for emails",
+      where: "resend.com → API Keys",
+      required: false,
+    },
+    {
+      name: "NEXT_PUBLIC_APP_URL",
+      description: "Your deployed app URL",
+      where: "e.g. https://yourschool.netlify.app",
+      required: true,
+    },
+  ]
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-      <div className="max-w-2xl w-full bg-white rounded-xl shadow-lg p-8 border">
+    <div className="min-h-screen bg-gray-50 py-12 px-4">
+      <div className="max-w-2xl mx-auto">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-slate-900">EduCore Setup Required</h1>
-          <p className="text-slate-500 mt-2">Environment variables must be configured to start the system.</p>
+          <h1 className="text-3xl font-bold text-[#1e3a5f] mb-2">
+            🎓 EduCore Setup
+          </h1>
+          <p className="text-gray-600">
+            Your EduCore deployment is running but needs to be 
+            configured. Add the following environment variables 
+            to your hosting platform.
+          </p>
         </div>
 
-        <div className="space-y-4 mb-8">
-          {Object.entries(envs).map(([key, value]) => (
-            <div key={key} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border">
-              <code className="text-sm font-semibold text-slate-700">{key}</code>
-              {value ? (
-                <CheckCircle2 className="text-green-500 h-5 w-5" />
-              ) : (
-                <XCircle className="text-red-500 h-5 w-5" />
-              )}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <p className="text-blue-800 text-sm font-medium">
+            📍 Where to add these on Netlify:
+          </p>
+          <p className="text-blue-700 text-sm mt-1">
+            Site → Site Configuration → Environment Variables → Add variable
+          </p>
+          <p className="text-blue-700 text-sm">
+            Then go to: Deploys → Trigger Deploy → Deploy site
+          </p>
+        </div>
+
+        <div className="space-y-4">
+          {vars.map((v) => (
+            <div key={v.name} 
+                 className="bg-white border border-gray-200 rounded-lg p-4">
+              <div className="flex items-start justify-between">
+                <div>
+                  <code className="text-sm font-mono font-bold text-[#1e3a5f]">
+                    {v.name}
+                  </code>
+                  {v.required && (
+                    <span className="ml-2 text-xs bg-red-100 text-red-700 
+                                     px-2 py-0.5 rounded">
+                      Required
+                    </span>
+                  )}
+                  {!v.required && (
+                    <span className="ml-2 text-xs bg-gray-100 text-gray-600 
+                                     px-2 py-0.5 rounded">
+                      Optional
+                    </span>
+                  )}
+                </div>
+              </div>
+              <p className="text-gray-600 text-sm mt-1">{v.description}</p>
+              <p className="text-gray-400 text-xs mt-1">📍 {v.where}</p>
             </div>
           ))}
         </div>
 
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
-          <h2 className="font-bold text-blue-900 mb-4">Instructions: How to get these values</h2>
-          <div className="space-y-4 text-sm text-blue-800">
-            <p className="font-semibold underline">SUPABASE:</p>
-            <ol className="list-decimal pl-5 space-y-2">
-              <li>Go to <a href="https://supabase.com" target="_blank" className="underline font-bold">supabase.com</a> and create a new project</li>
-              <li>Go to <strong>Settings → API</strong></li>
-              <li>Copy <strong>Project URL</strong> → paste as <code>NEXT_PUBLIC_SUPABASE_URL</code></li>
-              <li>Copy <strong>anon/public key</strong> → paste as <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code></li>
-              <li>Copy <strong>service_role key</strong> → paste as <code>SUPABASE_SERVICE_ROLE_KEY</code></li>
-            </ol>
-            <div className="mt-4 pt-4 border-t border-blue-200">
-                <p><strong>For local dev:</strong> Add these to your <code>.env.local</code> file in the project root.</p>
-                <p className="mt-2"><strong>For Vercel:</strong> Add these in <strong>Project Settings → Environment Variables</strong>.</p>
-            </div>
-          </div>
+        <div className="mt-8 bg-white border border-gray-200 rounded-lg p-6">
+          <h2 className="font-bold text-[#1e3a5f] mb-3">
+            After adding variables:
+          </h2>
+          <ol className="space-y-2 text-sm text-gray-600">
+            <li>1. Go back to Netlify → Deploys</li>
+            <li>2. Click &quot;Trigger deploy&quot; → &quot;Deploy site&quot;</li>
+            <li>3. Wait for deployment to complete</li>
+            <li>4. Visit your site — it will load the login page</li>
+            <li>5. Create your first admin account in Supabase Auth</li>
+          </ol>
         </div>
 
-        <div className="flex justify-center">
-            {isConfigured ? (
-                <Link 
-                    href="/" 
-                    className="bg-primary-800 text-white px-8 py-3 rounded-lg font-bold hover:bg-primary-700 transition-all flex items-center gap-2"
-                >
-                    System Configured - Go to Home
-                </Link>
-            ) : (
-                <button 
-                    onClick={() => window.location.reload()}
-                    className="bg-slate-900 text-white px-8 py-3 rounded-lg font-bold hover:bg-slate-800 transition-all flex items-center gap-2"
-                >
-                    <RefreshCw className="h-4 w-4" /> Refresh Page
-                </button>
-            )}
+        <div className="mt-6 text-center">
+          <a href="/login" 
+             className="text-[#1e3a5f] text-sm underline">
+            Already configured? Go to Login →
+          </a>
         </div>
       </div>
     </div>
-  );
+  )
 }

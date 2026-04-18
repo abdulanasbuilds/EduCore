@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { format } from "date-fns";
 import { EmptyState } from "@/components/shared/empty-state";
+import { StudentListActions } from "@/components/admin/student-list-actions";
 
 export default async function StudentsPage() {
   const supabase = (await createClient()) as any;
@@ -28,21 +29,16 @@ export default async function StudentsPage() {
     .eq("student_class_history.is_current", true)
     .order("full_name");
 
+  const { data: classes } = await supabase
+    .from("classes")
+    .select("id, name")
+    .eq("school_id", profile?.school_id || "");
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-slate-800">Students</h1>
-        <div className="flex flex-wrap gap-3">
-          <button className="px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-md text-sm font-medium hover:bg-slate-50 min-h-[44px]">
-            Import CSV
-          </button>
-          <Link
-            href="/admin/students/new"
-            className="px-4 py-2 bg-primary-800 text-white rounded-md text-sm font-medium hover:bg-primary-700 flex items-center min-h-[44px]"
-          >
-            Add Student
-          </Link>
-        </div>
+        <StudentListActions classes={classes || []} />
       </div>
 
       <div className="bg-white rounded-lg shadow-sm border overflow-hidden">

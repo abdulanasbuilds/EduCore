@@ -1,8 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { format } from "date-fns";
-import { ConfirmDialog } from "@/components/shared/confirm-dialog";
-import { withdrawStudentAction } from "@/actions/student-actions";
+import { StudentExitModal } from "@/components/admin/student-exit-modal";
 
 export default async function StudentDetailPage({
   params,
@@ -119,21 +118,7 @@ export default async function StudentDetailPage({
               
               {student.status === "Active" && (
                 <div className="pt-4 border-t mt-4">
-                  <ConfirmDialog 
-                    title="Withdraw Student"
-                    description={`Are you sure you want to withdraw ${student.full_name}? This will lock their records.`}
-                    variant="destructive"
-                    confirmLabel="Withdraw Student"
-                    onConfirm={async () => {
-                      "use server";
-                      await withdrawStudentAction(student.id, "Withdrawn by admin", new Date().toISOString());
-                    }}
-                    trigger={
-                      <button className="w-full text-left px-3 py-2 rounded text-sm font-medium hover:bg-red-50 text-red-600">
-                        Withdraw Student
-                      </button>
-                    }
-                  />
+                  <StudentExitModal studentId={student.id} studentName={student.full_name} />
                 </div>
               )}
             </div>

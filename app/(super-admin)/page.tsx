@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { LayoutDashboard, School, Settings, Globe, Shield } from "lucide-react";
 import Link from "next/link";
 import { StatCard } from "@/components/shared/stat-card";
+import { SuperAdminActions } from "@/components/admin/super-admin-actions";
 
 export default async function SuperAdminPage() {
   const supabase = (await createClient()) as any;
@@ -49,11 +50,12 @@ export default async function SuperAdminPage() {
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-          <div className="p-6 border-b flex items-center justify-between">
-            <h2 className="text-lg font-bold text-slate-800">Managed Schools</h2>
-            <button className="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-800 transition-all shadow-sm">
-              Register New School
-            </button>
+          <div className="p-6 border-b flex items-center justify-between bg-slate-50/50">
+            <div>
+                <h2 className="text-lg font-bold text-slate-800">Institutional Instances</h2>
+                <p className="text-xs text-slate-500">Manage and monitor school-specific deployments</p>
+            </div>
+            <SuperAdminActions />
           </div>
 
           <div className="overflow-x-auto">
@@ -63,12 +65,16 @@ export default async function SuperAdminPage() {
                   <th className="px-6 py-4">School Name</th>
                   <th className="px-6 py-4">Address</th>
                   <th className="px-6 py-4">Contact</th>
-                  <th className="px-6 py-4">Status</th>
+                  <th className="px-6 py-4 text-center">Status</th>
                   <th className="px-6 py-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {schools?.map((s: any) => (
+                {!schools?.length ? (
+                    <tr>
+                        <td colSpan={5} className="px-6 py-12 text-center text-slate-400 italic">No school instances registered yet.</td>
+                    </tr>
+                ) : schools.map((s: any) => (
                   <tr key={s.id} className="hover:bg-slate-50 transition-colors group">
                     <td className="px-6 py-5">
                       <div className="flex items-center gap-3">
@@ -83,13 +89,16 @@ export default async function SuperAdminPage() {
                       <p className="text-slate-900 font-medium">{s.phone}</p>
                       <p className="text-slate-500 text-xs">{s.email}</p>
                     </td>
-                    <td className="px-6 py-5">
-                      <span className="bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Active</span>
+                    <td className="px-6 py-5 text-center">
+                      <span className="bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">Active</span>
                     </td>
                     <td className="px-6 py-5 text-right">
-                      <button className="text-primary-600 hover:text-primary-700 font-bold px-3 py-1.5 rounded-md hover:bg-primary-50 transition-all border border-transparent hover:border-primary-100">
+                      <Link 
+                        href={`/super-admin/schools/${s.id}`}
+                        className="text-primary-600 hover:text-primary-700 font-bold px-3 py-1.5 rounded-md hover:bg-primary-50 transition-all border border-transparent hover:border-primary-100"
+                      >
                         Manage Instance
-                      </button>
+                      </Link>
                     </td>
                   </tr>
                 ))}

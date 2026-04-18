@@ -1,12 +1,14 @@
 import { createClient } from "@/lib/supabase/server";
 import { EmptyState } from "@/components/shared/empty-state";
-import Link from "next/link";
-import { Plus, Filter } from "lucide-react";
+import { Filter } from "lucide-react";
+import { AssessmentActions } from "@/components/admin/assessment-actions";
 
 export default async function AdminAssessmentsPage() {
   const supabase = (await createClient()) as any;
   const { data: { user } } = await supabase.auth.getUser();
   const { data: profile } = await supabase.from("profiles").select("school_id").eq("id", user?.id).single();
+
+  const { data: activeTerm } = await supabase.from("terms").select("id, name").eq("school_id", profile?.school_id).eq("status", "active").single();
 
   const { data: assessments } = await supabase
     .from("assessments")
@@ -16,17 +18,25 @@ export default async function AdminAssessmentsPage() {
       subjects(name),
       assessment_types(name, weight)
     `)
-    .eq("term_id", (await supabase.from("terms").select("id").eq("school_id", profile?.school_id).eq("status", "active").single()).data?.id)
+    .eq("term_id", activeTerm?.id || "")
     .order("date", { ascending: false });
+
+  const { data: classes } = await supabase.from("classes").select("id, name").eq("school_id", profile?.school_id);
+  const { data: subjects } = await supabase.from("subjects").select("id, name").eq("school_id", profile?.school_id);
+  const { data: types } = await supabase.from("assessment_types").select("id, name").eq("school_id", profile?.school_id);
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-slate-800">Assessments</h1>
-        <button className="bg-primary-800 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-primary-700 flex items-center gap-2 min-h-[44px]">
-          <Plus className="h-4 w-4" />
-          Create Assessment
-        </button>
+        {activeTerm && (
+            <AssessmentActions 
+                classes={classes || []} 
+                subjects={subjects || []} 
+                types={types || []} 
+                activeTermId={activeTerm.id} 
+            />
+        )}
       </div>
 
       <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
@@ -79,7 +89,7 @@ export default async function AdminAssessmentsPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button className="text-primary-600 hover:underline font-medium">View Grades</button>
+                      <button className="text-primary-600 hover:underline font-medium px-2 py-1 rounded">View Grades</button>
                     </td>
                   </tr>
                 ))}

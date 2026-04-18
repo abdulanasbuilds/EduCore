@@ -1,8 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { EmptyState } from "@/components/shared/empty-state";
-import { Plus, Check, Lock, Calendar } from "lucide-react";
+import { Lock, Calendar } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
+import { AcademicYearActions } from "@/components/admin/academic-year-actions";
 
 export default async function AcademicYearPage() {
   const supabase = (await createClient()) as any;
@@ -22,10 +23,7 @@ export default async function AcademicYearPage() {
           <h1 className="text-2xl font-bold text-slate-800">Academic Calendar</h1>
           <p className="text-sm text-slate-500">Manage school years, terms, and holidays</p>
         </div>
-        <button className="bg-primary-800 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-primary-700 flex items-center gap-2 min-h-[44px]">
-          <Plus className="h-4 w-4" />
-          Create New Year
-        </button>
+        <AcademicYearActions />
       </div>
 
       {!years || years.length === 0 ? (
@@ -57,7 +55,15 @@ export default async function AcademicYearPage() {
                 </div>
                 <div className="flex gap-3">
                   {!year.is_current && year.status !== "closed" && (
-                    <button className="text-sm font-medium text-slate-600 hover:text-slate-900 bg-white border px-4 py-2 rounded-md shadow-sm">
+                    <button 
+                      onClick={undefined}
+                      data-id={year.id}
+                      className="text-sm font-medium text-slate-600 hover:text-slate-900 bg-white border px-4 py-2 rounded-md shadow-sm"
+                      onMouseDown={(e) => {
+                        const target = e.currentTarget as HTMLButtonElement;
+                        document.dispatchEvent(new CustomEvent('setCurrentYear', { detail: target.dataset.id }));
+                      }}
+                    >
                       Set as Current
                     </button>
                   )}
@@ -107,12 +113,26 @@ export default async function AcademicYearPage() {
                       
                       <div className="mt-4 pt-4 border-t border-slate-100 flex justify-end">
                         {term.status === 'upcoming' && year.is_current && (
-                          <button className="text-sm font-semibold text-primary-600 hover:text-primary-800">
+                          <button 
+                            data-id={term.id}
+                            className="text-sm font-semibold text-primary-600 hover:text-primary-800"
+                            onMouseDown={(e) => {
+                              const target = e.currentTarget as HTMLButtonElement;
+                              document.dispatchEvent(new CustomEvent('openTerm', { detail: target.dataset.id }));
+                            }}
+                          >
                             Open Term
                           </button>
                         )}
                         {term.status === 'active' && (
-                          <button className="text-sm font-semibold text-red-600 hover:text-red-800">
+                          <button 
+                            data-id={term.id}
+                            className="text-sm font-semibold text-red-600 hover:text-red-800"
+                            onMouseDown={(e) => {
+                              const target = e.currentTarget as HTMLButtonElement;
+                              document.dispatchEvent(new CustomEvent('closeTerm', { detail: target.dataset.id }));
+                            }}
+                          >
                             Close Term
                           </button>
                         )}

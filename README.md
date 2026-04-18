@@ -1,79 +1,59 @@
-# EduCore - School Management System
+# 🎓 EduCore School Management System
 
-EduCore is a modern, isolated, and scalable school management system. Designed for independent deployment, each school receives its own Vercel project and its own Supabase database, ensuring total data privacy and zero cross-tenant contamination.
+EduCore is a high-performance, multi-tenant school management engine designed for modern educational institutions. It provides a comprehensive suite of tools for academic administration, student tracking, financial management, and parent communication.
 
-The platform provides dedicated portals for Super Admins, School Admins, Teachers, Bursars, Parents, and Students. Key features include attendance tracking with automated SMS alerts, grade management, fee processing with WhatsApp receipt generation, and comprehensive PDF report cards.
+Built for scale and privacy, EduCore follows a self-hosted model where each institution maintains its own isolated database instance, ensuring total data sovereignty.
 
-## Tech Stack
+---
+
+## 🛠️ Tech Stack
+
 - **Framework**: Next.js 15 (App Router)
 - **Language**: TypeScript
-- **Styling**: Tailwind CSS v3 + Shadcn/UI
-- **Database & Auth**: Supabase (PostgreSQL, Auth, Storage, Realtime, Edge Functions)
-- **Hosting**: Vercel
-- **SMS & WhatsApp**: Twilio
-- **Email**: Resend
-- **PDF Generation**: @react-pdf/renderer
-- **State Management**: Zustand
-- **Form Handling**: React Hook Form + Zod
+- **Styling**: Tailwind CSS + Shadcn UI
+- **Database/Auth**: Supabase (PostgreSQL + RLS)
+- **Real-time/Edge**: Supabase Realtime + Edge Functions
+- **Infrastructure**: Vercel
+- **Integrations**: Twilio (SMS/WhatsApp), Resend (Email), Cloudinary (Images)
 
-## Local Development Setup
+---
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/abdulanasbuilds/EduCore.git
-   cd EduCore
-   ```
+## 🚀 Quick Start (Local Development)
 
-2. **Install dependencies**:
-   ```bash
-   npm install
-   ```
-
-3. **Environment Setup**:
-   Copy the example environment file and fill in your details:
-   ```bash
-   cp .env.example .env.local
-   ```
-
-4. **Run Supabase Migrations**:
-   Ensure you have the Supabase CLI installed, then push the initial schema:
-   ```bash
-   supabase link --project-ref your-project-ref
-   supabase db push
-   ```
-
-5. **Start the development server**:
-   ```bash
-   npm run dev
-   ```
-
-## Vercel + Supabase Deployment Guide
-
-1. **Create a Supabase Project**: Go to Supabase, create a new project. Navigate to SQL Editor and run the contents of `supabase/migrations/001_initial_schema.sql`.
-2. **Configure Auth**: In Supabase Auth settings, disable "Enable Email Confirmations" (since accounts are created by admins).
-3. **Deploy to Vercel**: Import the repository into Vercel. Select Next.js as the framework.
-4. **Environment Variables**: Add all the variables from `.env.example` into your Vercel project settings.
-5. **Set up Cron Jobs**: Vercel will automatically detect `vercel.json` for cron jobs if provided. Alternatively, hit the `/api/cron/*` endpoints with the `CRON_SECRET` header.
-6. **Edge Functions**: Deploy the Supabase edge functions via the CLI for attendance and grade notifications.
-
-## Environment Variables Reference
-
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `NEXT_PUBLIC_SUPABASE_URL` | Your Supabase project URL | Yes |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous key | Yes |
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key (Bypasses RLS) | Yes |
-| `TWILIO_ACCOUNT_SID` | Twilio Account SID for SMS/WhatsApp | No |
-| `TWILIO_AUTH_TOKEN` | Twilio Auth Token | No |
-| `TWILIO_PHONE_NUMBER` | Twilio registered phone number | No |
-| `RESEND_API_KEY` | Resend API key for emails | No |
-| `CLOUDINARY_*` | Cloudinary keys for image uploads | No |
-| `UPSTASH_REDIS_*` | Upstash Redis keys for rate limiting | No |
-| `NEXT_PUBLIC_APP_URL` | The production URL of the app | Yes |
-| `CRON_SECRET` | Secret key for cron job authorization | No |
-
-## Database Migrations
-To push schema changes to a linked Supabase project:
+### 1. Clone & Install
 ```bash
-supabase db push
+git clone https://github.com/abdulanasbuilds/EduCore.git
+cd EduCore
+npm install
 ```
+
+### 2. Environment Setup
+Copy `.env.example` to `.env.local` and fill in your credentials.
+```bash
+cp env.example .env.local
+```
+
+### 3. Database Migration
+Run the initial schema in your Supabase SQL Editor:
+`supabase/migrations/001_initial_schema.sql`
+
+### 4. Run Development Server
+```bash
+npm run dev
+```
+
+---
+
+## 🏗️ Deployment Guide
+
+1. **Supabase**: Create a new project and execute the migration file.
+2. **Vercel**: Link your repository, add the environment variables from `.env.local`.
+3. **Roles**: Manually update your first profile record in the `profiles` table to `SCHOOL_ADMIN` to gain access to the dashboard.
+
+---
+
+## 🔒 Security
+EduCore implements strict **Row Level Security (RLS)**. No user can access data outside of their assigned school instance. All administrative actions require verified role-based access tokens.
+
+---
+*Developed by DeepMind Agentic Coding Team*

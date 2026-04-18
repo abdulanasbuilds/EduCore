@@ -50,13 +50,20 @@ function getRouteConfig(path: string): RouteConfig | undefined {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return NextResponse.next();
+  }
+
   // Allow public routes and API routes
   if (isPublicRoute(pathname) || isApiRoute(pathname)) {
     // Still refresh session for public routes
     const response = NextResponse.next();
     const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      supabaseUrl,
+      supabaseAnonKey,
       {
         cookies: {
           getAll() {
@@ -77,8 +84,8 @@ export async function middleware(request: NextRequest) {
   // Create response to pass cookies
   const response = NextResponse.next();
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl,
+    supabaseAnonKey,
     {
       cookies: {
         getAll() {

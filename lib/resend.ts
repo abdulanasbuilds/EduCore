@@ -24,8 +24,8 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
       from: "EduCore <noreply@yourdomain.com>",
       to: recipients,
       subject: options.subject,
-      html: options.html,
-      text: options.text,
+      html: options.html || "",
+      text: options.text || "",
       attachments: options.attachments,
     });
 
@@ -39,9 +39,11 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
 export async function sendTemplateEmail(
   to: string | string[],
   templateName: string,
-  data: Record<string, unknown>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  data: Record<string, any>
 ): Promise<boolean> {
-  const templates: Record<string, (data: Record<string, unknown>) => string> = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const templates: Record<string, (data: Record<string, any>) => string> = {
     welcome: (d) => `
       <h1>Welcome to EduCore</h1>
       <p>Hello ${d.name},</p>

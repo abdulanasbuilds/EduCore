@@ -1,117 +1,73 @@
-"use client";
+import { createClient } from "@/lib/supabase/server";
+import { Suspense } from "react";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+export default async function AdminDashboardPage() {
+  const supabase = await createClient();
 
-const menuItems = [
-  { href: "/admin", label: "Dashboard", icon: "dashboard" },
-  { href: "/admin/students", label: "Students", icon: "people" },
-  { href: "/admin/teachers", label: "Teachers", icon: "school" },
-  { href: "/admin/classes", label: "Classes", icon: "class" },
-  { href: "/admin/subjects", label: "Subjects", icon: "book" },
-  { href: "/admin/attendance", label: "Attendance", icon: "check" },
-  { href: "/admin/grades", label: "Grades", icon: "grade" },
-  { href: "/admin/fees", label: "Fees", icon: "payment" },
-  { href: "/admin/reports", label: "Reports", icon: "assessment" },
-];
-
-interface ProfileData {
-  role: string;
-}
-
-export default function AdminDashboard() {
-  const router = useRouter();
-  const supabase = createClient();
-  const [user, setUser] = useState<{ email?: string; role?: string }>({});
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function fetchUser() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        router.push("/login");
-        return;
-      }
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("user_id", user.id)
-        .single() as { data: ProfileData | null };
-
-      setUser({ email: user.email, role: profile?.role });
-
-      if (profile?.role !== "SCHOOL_ADMIN" && profile?.role !== "SUPER_ADMIN") {
-        router.push("/teacher");
-      }
-      setLoading(false);
-    }
-    fetchUser();
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+  // Basic stats fetching
+  const [{ count: studentCount }, { count: classCount }, { count: teacherCount }] = await Promise.all([
+    supabase.from("students").select("*", { count: "exact", head: true }).eq("status", "Active"),
+    supabase.from("classes").select("*", { count: "exact", head: true }),
+    supabase.from("profiles").select("*", { count: "exact", head: true }).eq("role", "CLASS_TEACHER"),
+  ]);
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="bg-primary text-white shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-xl font-bold">EduCore Admin</h1>
-          <div className="flex items-center gap-4">
-            <span className="text-sm opacity-90">{user.email}</span>
-            <button
-              onClick={() => {
-                supabase.auth.signOut();
-                router.push("/login");
-              }}
-              className="text-sm bg-white/10 px-3 py-1 rounded hover:bg-white/20"
-            >
-              Logout
-            </button>
-          </div>
-        </div>
-      </header>
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold text-slate-800">Dashboard Overview</h1>
 
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {menuItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow border border-slate-200"
-            >
-              <div className="text-3xl mb-3">📚</div>
-              <h3 className="font-semibold text-slate-800">{item.label}</h3>
-              <p className="text-sm text-muted-foreground mt-1">Manage {item.label.toLowerCase()}</p>
-            </Link>
-          ))}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard title="Total Students" value={studentCount || 0} />
+        <StatCard title="Total Classes" value={classCount || 0} />
+        <StatCard title="Total Teachers" value={teacherCount || 0} />
+        <StatCard title="Today's Attendance" value="92%" />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+        <div className="bg-white p-6 rounded-lg shadow-sm border">
+          <h3 className="font-semibold text-lg mb-4">Alerts</h3>
+          <ul className="space-y-3">
+            <li className="flex items-center gap-2 text-sm text-amber-600">
+              <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+              12 students have attendance below 75%
+            </li>
+            <li className="flex items-center gap-2 text-sm text-red-600">
+              <span className="w-2 h-2 rounded-full bg-red-500"></span>
+              5 teachers have missing grades for Mid-Term
+            </li>
+            <li className="flex items-center gap-2 text-sm text-slate-600">
+              <span className="w-2 h-2 rounded-full bg-slate-500"></span>
+              45 students have outstanding fee balances
+            </li>
+          </ul>
         </div>
 
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
-            <h3 className="font-semibold mb-4">Today&apos;s Attendance</h3>
-            <p className="text-3xl font-bold text-accent">92%</p>
-            <p className="text-sm text-muted-foreground">Across all classes</p>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
-            <h3 className="font-semibold mb-4">Fees Collected</h3>
-            <p className="text-3xl font-bold text-accent">GHS 45,230</p>
-            <p className="text-sm text-muted-foreground">This term</p>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
-            <h3 className="font-semibold mb-4">Total Students</h3>
-            <p className="text-3xl font-bold text-primary">1,247</p>
-            <p className="text-sm text-muted-foreground">Active students</p>
-          </div>
+        <div className="bg-white p-6 rounded-lg shadow-sm border">
+          <h3 className="font-semibold text-lg mb-4">Recent Activity</h3>
+          <ul className="space-y-4">
+            <li className="text-sm">
+              <p className="font-medium text-slate-800">Attendance marked for Primary 4</p>
+              <p className="text-xs text-slate-500">10 minutes ago by Mr. Smith</p>
+            </li>
+            <li className="text-sm">
+              <p className="font-medium text-slate-800">Fee payment received: GHS 500</p>
+              <p className="text-xs text-slate-500">1 hour ago</p>
+            </li>
+            <li className="text-sm">
+              <p className="font-medium text-slate-800">New student enrolled: John Doe</p>
+              <p className="text-xs text-slate-500">3 hours ago</p>
+            </li>
+          </ul>
         </div>
-      </main>
+      </div>
+    </div>
+  );
+}
+
+function StatCard({ title, value }: { title: string; value: string | number }) {
+  return (
+    <div className="bg-white p-6 rounded-lg shadow-sm border flex flex-col">
+      <span className="text-sm text-slate-500 font-medium">{title}</span>
+      <span className="text-3xl font-bold text-slate-800 mt-2">{value}</span>
     </div>
   );
 }

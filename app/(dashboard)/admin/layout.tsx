@@ -1,17 +1,18 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, requireAuth } from "@/lib/supabase/server";
 import { AdminShell } from "@/components/admin/admin-shell";
 import type { UserRole } from "@/types";
+
+export const dynamic = 'force-dynamic';
 
 export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-    const supabase = (await createClient()) as any;
-    const { data: { user } } = await supabase.auth.getUser();
+    const { user, supabase } = await requireAuth();
 
-    if (!user) {
+    if (!user || !supabase) {
         redirect("/login");
     }
 
@@ -19,7 +20,8 @@ export default async function AdminLayout({
         .from("profiles")
         .select("role, school_id, full_name")
         .eq("id", user.id)
-        .single();
+        .single()
+        .catch(() => ({ data: null as any }));
 
   if (!profile || !["SCHOOL_ADMIN", "SUPER_ADMIN"].includes(profile.role as string)) {
     const roleRedirects: Record<UserRole, string> = {
@@ -34,7 +36,6 @@ export default async function AdminLayout({
     redirect(roleRedirects[(profile?.role as UserRole) || "STUDENT"] || "/login");
   }
 
-  // Get current term info
   let currentTermLabel = "No Active Term";
   if (profile.school_id) {
     const { data: activeTerm } = await supabase
@@ -43,7 +44,8 @@ export default async function AdminLayout({
       .eq("school_id", profile.school_id)
       .eq("status", "active")
       .limit(1)
-      .single();
+      .single()
+      .catch(() => ({ data: null as any }));
 
     if (activeTerm) {
       const term = activeTerm as { name: string; academic_year: { name: string } | null };
@@ -53,7 +55,7 @@ export default async function AdminLayout({
   }
 
   return (
-    <AdminShell profileName={profile.full_name} currentTerm={currentTermLabel}>
+    <AdminShell profileName={profile.full_name || "Admin"} currentTerm={currentTermLabel}>
       {children}
     </AdminShell>
   );

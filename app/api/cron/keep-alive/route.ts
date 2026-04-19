@@ -24,10 +24,8 @@ export async function GET(request: Request) {
       ok: true,
       timestamp: new Date().toISOString(),
       message: "Database is alive",
-      count
     })
   } catch (error: any) {
-    console.error("Keep-alive failed:", error.message)
     return NextResponse.json({
       ok: false,
       error: error.message,

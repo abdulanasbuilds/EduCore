@@ -1,23 +1,21 @@
 "use client"
 import { createBrowserClient } from "@supabase/ssr"
 import { env } from "@/lib/env"
-import type { Database } from "@/types"
 
-let client: any = null
+let cachedClient: any = null
 
 export function createClient() {
-  if (typeof window === 'undefined') return {} as any;
-
-  if (!client) {
-    const url = env.NEXT_PUBLIC_SUPABASE_URL
-    const key = env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-    if (!url || !key) {
-        // Fallback for build time safety
-        return {} as any
-    }
-
-    client = createBrowserClient<Database>(url, key)
+  // Don't create client during build/SSG with empty values
+  if (typeof window === 'undefined' && !env.NEXT_PUBLIC_SUPABASE_URL) {
+    return null
   }
-  return client
+  
+  // Use cached client or create new one
+  if (!cachedClient) {
+    cachedClient = createBrowserClient(
+      env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co",
+      env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder"
+    )
+  }
+  return cachedClient
 }

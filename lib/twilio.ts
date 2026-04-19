@@ -39,8 +39,22 @@ async function logNotification({
   errorMessage?: string
 }) {
   try {
-    const supabase = createAdminClient()
+    const supabase = createAdminClient() as any
+    
+    // Fetch the first school ID (since it's a single-tenant deployment)
+    const { data: school } = await supabase
+      .from("schools")
+      .select("id")
+      .limit(1)
+      .single()
+
+    if (!school) {
+      console.error("No school found for notification logging")
+      return
+    }
+
     await supabase.from("notification_logs").insert({
+      school_id: school.id,
       recipient_phone: recipientPhone,
       recipient_name: recipientName,
       channel,
@@ -49,7 +63,7 @@ async function logNotification({
       status,
       error_message: errorMessage ?? null,
       sent_at: new Date().toISOString(),
-    } as any)
+    })
   } catch (err) {
     // Never crash the main operation because of a log failure
     console.error("Failed to log notification:", err)

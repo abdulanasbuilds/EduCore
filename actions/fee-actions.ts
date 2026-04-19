@@ -23,18 +23,28 @@ export async function recordPaymentAction(
     }
 
     const data = parsed.data;
-    const supabase = (await createClient()) as any;
+    const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, message: "Unauthorized" };
 
-    // Get current fee record
-    const { data: studentFee } = await supabase
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role, school_id")
+      .eq("id", user.id)
+      .single();
+
+    if (!profile?.school_id || !["SCHOOL_ADMIN", "BURSAR"].includes(profile.role)) {
+      return { success: false, message: "Unauthorized: Only admins and bursars can record payments" };
+    }
+
+    // Get current fee record with lock to prevent race conditions
+    const { data: studentFee, error: feeError } = await supabase
       .from("student_fees")
       .select("amount_owed, amount_paid, balance")
       .eq("id", data.studentFeeId)
       .single();
 
-    if (!studentFee) {
+    if (feeError || !studentFee) {
       return { success: false, message: "Fee record not found" };
     }
 
@@ -45,6 +55,26 @@ export async function recordPaymentAction(
     // Generate receipt number
     const now = new Date();
     const receiptNumber = `RCP-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}-${String(Math.floor(Math.random() * 10000)).padStart(4, "0")}`;
+
+    // Use RPC to atomically update the fee balance to prevent race conditions
+    const { error: rpcError } = await supabase.rpc("update_student_fee_payment", {
+      p_student_fee_id: data.studentFeeId,
+      p_amount: data.amount,
+    });
+
+    if (rpcError) {
+      // Fallback: direct update if RPC doesn't exist
+      const newAmountPaid = studentFee.amount_paid + data.amount;
+      const { error: updateError } = await supabase
+        .from("student_fees")
+        .update({ amount_paid: newAmountPaid })
+        .eq("id", data.studentFeeId)
+        .eq("amount_paid", studentFee.amount_paid); // Optimistic lock
+
+      if (updateError) {
+        return { success: false, message: "Payment processing failed. Please try again." };
+      }
+    }
 
     // Create payment record
     const { error: paymentError } = await supabase.from("fee_payments").insert({
@@ -62,20 +92,9 @@ export async function recordPaymentAction(
       return { success: false, message: paymentError.message };
     }
 
-    // Update student fee amount_paid
-    const newAmountPaid = studentFee.amount_paid + data.amount;
-    const { error: updateError } = await supabase
-      .from("student_fees")
-      .update({ amount_paid: newAmountPaid })
-      .eq("id", data.studentFeeId);
-
-    if (updateError) {
-      return { success: false, message: updateError.message };
-    }
-
     return {
       success: true,
-      message: `Payment of GHS ${(data.amount / 100).toFixed(2)} recorded successfully`,
+      message: `Payment of GHS ${data.amount.toFixed(2)} recorded successfully`,
       data: { receiptNumber },
     };
   } catch {
@@ -105,9 +124,19 @@ export async function setupFeesAction(
     }
 
     const data = parsed.data;
-    const supabase = (await createClient()) as any;
+    const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, message: "Unauthorized" };
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role, school_id")
+      .eq("id", user.id)
+      .single();
+
+    if (!profile?.school_id || !["SCHOOL_ADMIN", "BURSAR"].includes(profile.role)) {
+      return { success: false, message: "Unauthorized: Only admins and bursars can set up fees" };
+    }
 
     for (const assignment of data.assignments) {
       const { data: fa, error: faError } = await supabase

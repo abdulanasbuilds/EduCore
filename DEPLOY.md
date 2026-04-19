@@ -1,66 +1,51 @@
-# 🚀 EduCore — Deploying a New School
-
-This repository is designed as a **single-tenant per deployment** system. To deploy a new school instance, you will use this same repository but connect it to a unique institution-specific database and services.
+# EduCore — Deploying a New School
 
 ## What you need before starting (15 minutes)
-- A Supabase account (free tier works great)
-- A Vercel/Cloudflare/Railway account
-- Access to this GitHub repository
-
----
+- A Supabase account (free at supabase.com)
+- A Vercel account (free at vercel.com)  
+- This GitHub repo access
 
 ## Step 1 — Create Supabase Project (5 mins)
-1. Go to [supabase.com](https://supabase.com) → **New Project**
-2. Name it: `educore-[schoolname]`
-3. Save the database password securely
-4. Wait 2 minutes for project initialization
-5. Go to **Settings → API**
-6. Copy: `Project URL`, `anon public key`, and `service_role key` (secret)
+1. Go to supabase.com → New Project
+2. Name it: educore-[schoolname]
+3. Save the database password somewhere safe
+4. Wait 2 minutes for project to initialize
+5. Go to Settings → API
+6. Copy: Project URL, anon key, service_role key
 
 ## Step 2 — Set Up the Database (2 mins)
-1. In your Supabase Dashboard, go to **SQL Editor**
-2. Paste the contents of `supabase/migrations/001_initial_schema.sql` from this repository
-3. Click **Run** — this initializes all tables, RLS policies, and triggers
+1. In Supabase, go to SQL Editor
+2. Paste the contents of /supabase/migrations/001_initial_schema.sql
+3. Click Run — this creates all tables
 
-## Step 3 — Deploy to Your Hosting Platform (5 mins)
+## Step 3 — Deploy to Vercel (5 mins)
+1. Go to vercel.com → Add New Project
+2. Import from GitHub → select this repo
+3. Project name: educore-[schoolname]
+4. Before clicking Deploy, add Environment Variables:
+   NEXT_PUBLIC_SUPABASE_URL → paste from Supabase
+   NEXT_PUBLIC_SUPABASE_ANON_KEY → paste from Supabase
+   SUPABASE_SERVICE_ROLE_KEY → paste from Supabase
+   NEXT_PUBLIC_APP_URL → https://educore-[schoolname].vercel.app
+5. Click Deploy
 
-### Option A: Vercel (Recommended)
-1. Go to [vercel.com](https://vercel.com) → **Add New Project**
-2. Import this GitHub repository
-3. Before clicking **Deploy**, open **Environment Variables** and add:
-   - `NEXT_PUBLIC_SUPABASE_URL` → (from Step 1)
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` → (from Step 1)
-   - `SUPABASE_SERVICE_ROLE_KEY` → (from Step 1)
-   - `NEXT_PUBLIC_APP_URL` → `https://your-project-name.vercel.app`
-4. Click **Deploy**
+## Step 4 — Create Admin Account (2 mins)
+1. In Supabase → Authentication → Users → Invite User
+2. Enter headmaster email
+3. In Supabase SQL Editor run:
+   UPDATE profiles SET role = 'school_admin' 
+   WHERE email = 'headmaster@school.com';
 
-### Option B: Cloudflare Pages / Railway / Netlify
-Follow the standard import flow for your platform. The included configuration files (`_headers`, `_redirects`, `railway.json`, `netlify.toml`) will handle platform-specific requirements automatically.
+## Step 5 — Add Custom Domain (optional)
+1. In Vercel → Project → Settings → Domains
+2. Add: portal.schoolname.com
+3. Follow the DNS instructions shown
 
----
+## Deploying to Cloudflare Pages instead
+Same process but in Cloudflare Pages dashboard.
+The _redirects and _headers files in /public/ 
+handle Cloudflare-specific requirements automatically.
 
-## Step 4 — Create the Admin Account (2 mins)
-1. In **Supabase → Authentication → Users** → Click **Invite User**
-2. Enter the school administrator's email
-3. Once they accept, or to force-setup immediately, run this in the **Supabase SQL Editor**:
-   ```sql
-   UPDATE profiles 
-   SET role = 'SCHOOL_ADMIN' 
-   WHERE email = 'admin@school.com';
-   ```
-
-## Step 5 — (Optional) Add Institutions Services
-To enable advanced features, add these keys to your hosting platform's environment variables:
-- **Twilio**: `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER` (For SMS/WhatsApp)
-- **Resend**: `RESEND_API_KEY` (For Email)
-- **Cloudinary**: `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` (For file uploads)
-
----
-
-## Maintenance & Updates
-To update a school instance to the latest version of EduCore:
-1. Simply sync your deployment with the latest `main` branch of this repository.
-2. If there are new database migrations, run them in the school's Supabase SQL Editor.
-
----
-*Built with integrity for African Schools*
+## Deploying to Railway
+Same process using the railway.json config.
+Add environment variables in Railway's Variables tab.

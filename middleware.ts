@@ -2,84 +2,101 @@ import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 
 export async function middleware(request: NextRequest) {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-  // If not configured yet, only allow setup and public pages
-  if (!supabaseUrl || !supabaseKey || supabaseUrl === 'your_supabase_project_url') {
-    const path = request.nextUrl.pathname
-    const allowed = ["/", "/setup", "/login", 
-                     "/forgot-password", "/reset-password",
-                     "/api/health"]
-    if (!allowed.some(p => path === p || path.startsWith("/_next") || 
-                          path.startsWith("/public"))) {
-      return NextResponse.redirect(new URL("/setup", request.url))
+  // If Supabase is not configured, redirect to setup page
+  // This handles fresh deployments where env vars not yet added
+  if (
+    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  ) {
+    // Allow the setup page itself to load
+    if (request.nextUrl.pathname === "/setup") {
+      return NextResponse.next()
     }
-    return NextResponse.next()
+    // Allow auth pages (they show a "not configured" message)
+    if (request.nextUrl.pathname.startsWith("/(auth)")) {
+      return NextResponse.next()
+    }
+    // Redirect everything else to setup
+    return NextResponse.redirect(new URL("/setup", request.url))
   }
 
-  let supabaseResponse = NextResponse.next({ request })
-
-  const supabase = createServerClient(supabaseUrl, supabaseKey, {
-    cookies: {
-      getAll() {
-        return request.cookies.getAll()
-      },
-      setAll(cookiesToSet: any) {
-        cookiesToSet.forEach(({ name, value }: any) =>
-          request.cookies.set(name, value)
-        )
-        supabaseResponse = NextResponse.next({ request })
-        cookiesToSet.forEach(({ name, value, options }: any) =>
-          supabaseResponse.cookies.set(name, value, options)
-        )
-      },
-    },
+  let supabaseResponse = NextResponse.next({
+    request,
   })
 
-  // Always use getUser() not getSession()
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet: any[]) {
+          cookiesToSet.forEach((cookie: any) =>
+            request.cookies.set(cookie.name, cookie.value)
+          )
+          supabaseResponse = NextResponse.next({ request })
+          cookiesToSet.forEach((cookie: any) =>
+            supabaseResponse.cookies.set(cookie.name, cookie.value, cookie.options)
+          )
+        },
+      },
+    }
+  )
+
+  // IMPORTANT: Always use getUser() not getSession()
   const { data: { user } } = await supabase.auth.getUser()
 
   const path = request.nextUrl.pathname
 
+  // Define protected routes and their required roles
   const protectedRoutes = [
-    { pattern: /^\/admin/, roles: ["SCHOOL_ADMIN", "SUPER_ADMIN"] },
-    { pattern: /^\/teacher/, roles: ["CLASS_TEACHER", "SUBJECT_TEACHER"] },
-    { pattern: /^\/subject-teacher/, roles: ["SUBJECT_TEACHER", "CLASS_TEACHER"] },
-    { pattern: /^\/bursar/, roles: ["BURSAR"] },
-    { pattern: /^\/parent/, roles: ["PARENT"] },
-    { pattern: /^\/student/, roles: ["STUDENT"] },
-    { pattern: /^\/super-admin/, roles: ["SUPER_ADMIN"] },
+    { pattern: /^\/admin/, roles: ["school_admin"] },
+    { pattern: /^\/teacher/, roles: ["class_teacher", "subject_teacher"] },
+    { pattern: /^\/subject-teacher/, roles: ["subject_teacher", "class_teacher"] },
+    { pattern: /^\/bursar/, roles: ["bursar"] },
+    { pattern: /^\/parent/, roles: ["parent"] },
+    { pattern: /^\/student/, roles: ["student"] },
+    { pattern: /^\/super-admin/, roles: ["super_admin"] },
   ]
 
   const isProtected = protectedRoutes.some(r => r.pattern.test(path))
-  const isAuthPage = /^\/(login|forgot-password|reset-password)/.test(path)
+  const isAuthPage = path.startsWith("/login") || 
+                     path.startsWith("/forgot-password") ||
+                     path.startsWith("/reset-password")
 
+  // Not logged in, trying to access protected route
   if (isProtected && !user) {
-    const url = new URL("/login", request.url)
-    url.searchParams.set("redirect", path)
-    return NextResponse.redirect(url)
+    const redirectUrl = new URL("/login", request.url)
+    redirectUrl.searchParams.set("redirect", path)
+    return NextResponse.redirect(redirectUrl)
   }
 
+  // Logged in but trying to access login page
   if (user && isAuthPage) {
+    // Get user role from profiles table
     const { data: profile } = await supabase
       .from("profiles")
       .select("role")
       .eq("id", user.id)
       .single()
 
-    const roleMap: Record<string, string> = {
-      SUPER_ADMIN: "/super-admin",
-      SCHOOL_ADMIN: "/admin",
-      CLASS_TEACHER: "/teacher",
-      SUBJECT_TEACHER: "/subject-teacher",
-      BURSAR: "/bursar",
-      PARENT: "/parent",
-      STUDENT: "/student",
+    const roleRedirects: Record<string, string> = {
+      super_admin: "/super-admin",
+      school_admin: "/admin",
+      class_teacher: "/teacher",
+      subject_teacher: "/subject-teacher",
+      bursar: "/bursar",
+      parent: "/parent",
+      student: "/student",
     }
 
-    const dest = (profile as any)?.role ? (roleMap[(profile as any).role] ?? "/") : "/"
-    return NextResponse.redirect(new URL(dest, request.url))
+    const destination = profile?.role 
+      ? roleRedirects[profile.role] ?? "/login"
+      : "/login"
+
+    return NextResponse.redirect(new URL(destination, request.url))
   }
 
   // Logged in, check role matches the route
@@ -92,19 +109,19 @@ export async function middleware(request: NextRequest) {
 
     const matchedRoute = protectedRoutes.find(r => r.pattern.test(path))
 
-    if (matchedRoute && (profile as any)?.role && 
-        !matchedRoute.roles.includes((profile as any).role)) {
+    if (matchedRoute && profile?.role && 
+        !matchedRoute.roles.includes(profile.role)) {
       // Role doesn't match — redirect to their correct dashboard
-      const roleMap: Record<string, string> = {
-        SUPER_ADMIN: "/super-admin",
-        SCHOOL_ADMIN: "/admin",
-        CLASS_TEACHER: "/teacher",
-        SUBJECT_TEACHER: "/subject-teacher",
-        BURSAR: "/bursar",
-        PARENT: "/parent",
-        STUDENT: "/student",
+      const roleRedirects: Record<string, string> = {
+        super_admin: "/super-admin",
+        school_admin: "/admin",
+        class_teacher: "/teacher",
+        subject_teacher: "/subject-teacher",
+        bursar: "/bursar",
+        parent: "/parent",
+        student: "/student",
       }
-      const destination = roleMap[(profile as any).role] ?? "/"
+      const destination = roleRedirects[profile.role] ?? "/login"
       return NextResponse.redirect(new URL(destination, request.url))
     }
   }
@@ -114,6 +131,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|public|api/webhooks).*)",
   ],
 }

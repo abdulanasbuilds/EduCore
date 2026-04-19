@@ -197,9 +197,19 @@ export async function updateStudentAction(
   updates: Record<string, unknown>
 ): Promise<ActionResponse> {
   try {
-    const supabase = (await createClient()) as any;
+    const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, message: "Unauthorized" };
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    if (!["SCHOOL_ADMIN"].includes(profile?.role || "")) {
+      return { success: false, message: "Unauthorized: Only admins can update students" };
+    }
 
     const { error } = await supabase
       .from("students")
@@ -219,9 +229,19 @@ export async function withdrawStudentAction(
   withdrawalDate: string
 ): Promise<ActionResponse> {
   try {
-    const supabase = (await createClient()) as any;
+    const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, message: "Unauthorized" };
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    if (!["SCHOOL_ADMIN"].includes(profile?.role || "")) {
+      return { success: false, message: "Unauthorized: Only admins can withdraw students" };
+    }
 
     const { error } = await supabase
       .from("students")

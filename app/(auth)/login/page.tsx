@@ -79,38 +79,38 @@ function LoginForm() {
 
   if (configError) {
     return (
-      <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg text-center">
-        <p className="font-bold">System not configured.</p>
-        <p className="text-sm mt-1">Contact your administrator.</p>
+      <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-lg text-center text-sm">
+        <p className="font-medium">System not configured.</p>
+        <p className="text-sm mt-1">Please add your Supabase credentials to continue.</p>
       </div>
     );
   }
 
   return (
-    <form onSubmit={handleLogin} className="space-y-4">
+    <form onSubmit={handleLogin} className="space-y-5">
       {error && (
-        <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm border border-red-100">
+        <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm text-center">
           {error}
         </div>
       )}
 
       <div>
-        <label htmlFor="email" className="block text-sm font-medium mb-1 text-slate-700">
-          Email Address
+        <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1.5">
+          Email
         </label>
         <input
           id="email"
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all"
-          placeholder="admin@school.edu"
+          className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-all"
+          placeholder="name@school.edu"
           required
         />
       </div>
 
       <div>
-        <label htmlFor="password" className="block text-sm font-medium mb-1 text-slate-700">
+        <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1.5">
           Password
         </label>
         <input
@@ -118,8 +118,8 @@ function LoginForm() {
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all"
-          placeholder="••••••••"
+          className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-all"
+          placeholder="Enter your password"
           required
         />
       </div>
@@ -127,10 +127,10 @@ function LoginForm() {
       <button
         type="submit"
         disabled={loading || !supabase}
-        className="w-full bg-primary-800 text-white py-2.5 rounded-md font-bold hover:bg-primary-700 transition-all disabled:opacity-50 min-h-[44px] flex items-center justify-center gap-2 shadow-sm"
+        className="w-full bg-slate-900 text-white py-3 rounded-lg font-medium hover:bg-slate-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
       >
         {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-        {loading ? "Signing in..." : "Sign In to Portal"}
+        {loading ? "Signing in..." : "Sign In"}
       </button>
     </form>
   );
@@ -138,36 +138,38 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-slate-100 p-4">
+      <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-800 text-white rounded-2xl mb-4 shadow-lg">
-            <span className="text-2xl font-black italic">E</span>
+          <div className="w-12 h-12 bg-slate-900 text-white rounded-xl flex items-center justify-center mx-auto mb-4">
+            <span className="text-lg font-bold">EC</span>
           </div>
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">EduCore</h1>
-          <p className="text-slate-500 mt-2 font-medium">Institutional Management Suite</p>
+          <h1 className="text-2xl font-bold text-slate-900">EduCore</h1>
+          <p className="text-slate-500 mt-1 text-sm">School Management Portal</p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-slate-100">
-          <h2 className="text-xl font-bold mb-6 text-slate-800">Sign In</h2>
+        <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
+          <h2 className="text-lg font-semibold mb-5 text-slate-800">Sign in to continue</h2>
 
-          <Suspense fallback={<div className="h-48 flex items-center justify-center text-slate-400 font-medium">Preparing secure gateway...</div>}>
+          <Suspense fallback={<div className="h-32 flex items-center justify-center text-slate-400 text-sm">Loading...</div>}>
             <LoginForm />
           </Suspense>
 
-          <div className="mt-6 text-center">
+          <div className="mt-5 text-center">
             <Link
               href="/forgot-password"
-              className="text-primary-600 hover:text-primary-700 text-sm font-semibold transition-colors"
+              className="text-sm text-slate-600 hover:text-slate-900 transition-colors"
             >
               Forgot password?
             </Link>
           </div>
         </div>
         
-        <p className="mt-8 text-center text-xs text-slate-400 font-medium uppercase tracking-widest">
-            &copy; 2024 EduCore System
-        </p>
+        <div className="mt-6 text-center">
+          <Link href="/" className="text-sm text-slate-500 hover:text-slate-700">
+            &larr; Back to home
+          </Link>
+        </div>
       </div>
     </div>
   );

@@ -208,7 +208,7 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
             <div>
               <h2 className="text-2xl md:text-3xl font-bold mb-4">Get in touch</h2>
-              <p className="text-slate-400 mb-8">Ready to modernize your school's operations? Let's talk.</p>
+              <p className="text-slate-400 mb-8">Ready to modernize your school? Let us tell you more.</p>
               
               <div className="space-y-4">
                 <div className="flex items-center gap-3">

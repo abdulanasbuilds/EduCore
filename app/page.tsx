@@ -16,7 +16,11 @@ import {
   ChevronRight,
   Mail,
   Phone,
-  MapPin
+  MapPin,
+  Twitter,
+  Github,
+  Linkedin,
+  Instagram
 } from "lucide-react";
 
 export default function LandingPage() {
@@ -272,16 +276,27 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="mt-8 pt-8 border-t border-slate-100">
-            <div className="flex flex-col items-center gap-4">
-              <p className="text-sm text-slate-600">Built by Abdul Anas</p>
-              <div className="flex items-center gap-4">
-                <a href="https://twitter.com/@abdulanasbuilds" target="_blank" rel="noopener noreferrer" className="text-sm text-slate-500 hover:text-slate-900">Twitter</a>
-                <span className="text-slate-300">|</span>
-                <a href="https://github.com/abdulanasbuilds" target="_blank" rel="noopener noreferrer" className="text-sm text-slate-500 hover:text-slate-900">GitHub</a>
-                <span className="text-slate-300">|</span>
-                <a href="https://linkedin.com/in/abdulanasbuilds" target="_blank" rel="noopener noreferrer" className="text-sm text-slate-500 hover:text-slate-900">LinkedIn</a>
-                <span className="text-slate-300">|</span>
-                <a href="https://instagram.com/abdulanasbuilds" target="_blank" rel="noopener noreferrer" className="text-sm text-slate-500 hover:text-slate-900">Instagram</a>
+            <div className="flex flex-col items-center gap-4 text-center">
+              <p className="text-sm font-bold tracking-widest text-slate-900 uppercase">Built by Abdul Anas</p>
+              <p className="text-xs font-medium text-slate-500">@abdulanasbuilds</p>
+              <div className="flex items-center gap-6">
+                <a href="https://twitter.com/abdulanasbuilds" target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-slate-900 transition-colors">
+                  <Twitter className="w-5 h-5" />
+                </a>
+                <a href="https://github.com/abdulanasbuilds" target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-slate-900 transition-colors">
+                  <Github className="w-5 h-5" />
+                </a>
+                <a href="https://linkedin.com/in/abdulanasbuilds" target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-slate-900 transition-colors">
+                  <Linkedin className="w-5 h-5" />
+                </a>
+                <a href="https://instagram.com/abdulanasbuilds" target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-slate-900 transition-colors">
+                  <Instagram className="w-5 h-5" />
+                </a>
+                <a href="https://tiktok.com/@abdulanasbuilds" target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-slate-900 transition-colors">
+                  <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.17-2.89-.6-4.13-1.47-.13 3.44-.3 6.88-.45 10.32-.07 1.34-.34 2.76-1.12 3.89-1.28 1.84-3.59 2.73-5.85 2.51-2.15-.22-4.14-1.42-5.18-3.32-1.28-2.34-.95-5.5.9-7.4 1.25-1.28 3.03-1.84 4.79-1.63v4.13c-.93-.11-1.92.1-2.65.73-.85.73-1.1 2.02-.62 2.99.52 1.04 1.77 1.66 2.92 1.4 1.05-.24 1.8-1.2 1.85-2.27.14-3.95.28-7.91.43-11.86.03-1.4.15-2.8.27-4.19z"/>
+                  </svg>
+                </a>
               </div>
             </div>
           </div>

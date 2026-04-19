@@ -271,6 +271,20 @@ export default function LandingPage() {
               <Link href="#" className="hover:text-slate-900">Terms</Link>
             </div>
           </div>
+          <div className="mt-8 pt-8 border-t border-slate-100">
+            <div className="flex flex-col items-center gap-4">
+              <p className="text-sm text-slate-600">Built by Abdul Anas</p>
+              <div className="flex items-center gap-4">
+                <a href="https://twitter.com/@abdulanasbuilds" target="_blank" rel="noopener noreferrer" className="text-sm text-slate-500 hover:text-slate-900">Twitter</a>
+                <span className="text-slate-300">|</span>
+                <a href="https://github.com/abdulanasbuilds" target="_blank" rel="noopener noreferrer" className="text-sm text-slate-500 hover:text-slate-900">GitHub</a>
+                <span className="text-slate-300">|</span>
+                <a href="https://linkedin.com/in/abdulanasbuilds" target="_blank" rel="noopener noreferrer" className="text-sm text-slate-500 hover:text-slate-900">LinkedIn</a>
+                <span className="text-slate-300">|</span>
+                <a href="https://instagram.com/abdulanasbuilds" target="_blank" rel="noopener noreferrer" className="text-sm text-slate-500 hover:text-slate-900">Instagram</a>
+              </div>
+            </div>
+          </div>
           <div className="mt-6 text-center text-xs text-slate-400">
             &copy; {new Date().getFullYear()} EduCore. All rights reserved.
           </div>

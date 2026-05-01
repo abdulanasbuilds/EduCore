@@ -89,6 +89,17 @@ export default async function StudentDetailPage({
               ))}
             </div>
           </div>
+
+          {/* Behaviour History */}
+          <div className="bg-white p-6 rounded-lg shadow-sm border mt-6">
+            <div className="flex justify-between items-center border-b pb-2 mb-4">
+              <h3 className="font-semibold text-lg text-slate-800">Behaviour Logs</h3>
+              <button className="text-sm bg-slate-900 text-white px-3 py-1 rounded hover:bg-slate-800">Log Behaviour</button>
+            </div>
+            <div className="space-y-4 text-sm text-slate-500 text-center py-4">
+              <p>No behaviour logs recorded for this student.</p>
+            </div>
+          </div>
         </div>
 
         <div className="space-y-6">

@@ -217,7 +217,7 @@ export default function LandingPage() {
             <Link href="/register/parent" className="hover:text-white transition-colors">Parent Registration</Link>
           </div>
           <p className="text-xs text-slate-500 opacity-70">
-            Powered by technology
+            Powered by ABDUL ANAS and @abdulanasbuilds on all social media platform
           </p>
         </div>
       </footer>

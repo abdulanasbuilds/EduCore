@@ -1,6 +1,6 @@
 "use server";
 
-import { createAdminClient } from "@/lib/Supabase/admin";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function verifyStudentForRegistration(admissionNumber: string, verificationData: { name?: string; dob?: string }) {
   const adminDb = createAdminClient();

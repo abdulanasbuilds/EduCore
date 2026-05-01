@@ -1,21 +1,18 @@
 "use client"
 import { createBrowserClient } from "@supabase/ssr"
-import { env } from "@/lib/env"
-
-let cachedClient: any = null
 
 export function createClient() {
-  // Don't create client during build/SSG with empty values
-  if (typeof window === 'undefined' && !env.NEXT_PUBLIC_SUPABASE_URL) {
-    return null
-  }
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   
-  // Use cached client or create new one
-  if (!cachedClient) {
-    cachedClient = createBrowserClient(
-      env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co",
-      env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder"
+  if (!url || !key) {
+    // Return null-safe — caller must handle null
+    // This only happens if env vars not set yet
+    throw new Error(
+      "Supabase not configured. Add NEXT_PUBLIC_SUPABASE_URL " +
+      "and NEXT_PUBLIC_SUPABASE_ANON_KEY to your environment variables."
     )
   }
-  return cachedClient
+  
+  return createBrowserClient(url, key)
 }

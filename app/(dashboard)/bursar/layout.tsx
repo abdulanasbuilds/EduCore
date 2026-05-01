@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
@@ -17,14 +18,14 @@ export default async function BursarLayout({
     .eq("id", user.id)
     .single();
 
-  if (!profile || !["BURSAR", "SUPER_ADMIN", "SCHOOL_ADMIN"].includes(profile.role)) {
+  if (!profile || !["bursar", "school_admin"].includes(profile.role)) {
     redirect("/login");
   }
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
       <header className="bg-primary-800 text-white shadow-sm h-16 flex items-center justify-between px-6">
-        <h2 className="text-xl font-semibold">EduCore Bursar</h2>
+        <h2 className="text-xl font-semibold">Fee Management</h2>
         <form action="/auth/signout" method="post">
           <button className="text-sm hover:underline">Logout</button>
         </form>
@@ -35,3 +36,4 @@ export default async function BursarLayout({
     </div>
   );
 }
+

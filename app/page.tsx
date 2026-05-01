@@ -1,308 +1,224 @@
+export const dynamic = 'force-dynamic';
+
 import Link from "next/link";
-import { 
-  ArrowRight, 
-  Menu,
-  X,
-  GraduationCap,
-  ClipboardCheck,
-  Wallet,
-  MessageCircle,
-  BarChart3,
-  Calendar,
-  FileText,
-  Users,
-  Building2,
-  CheckCircle2,
-  ChevronRight,
-  Mail,
-  Phone,
-  MapPin,
-  Twitter,
-  Github,
-  Linkedin,
-  Instagram
-} from "lucide-react";
+import { schoolConfig } from "@/lib/env";
+import { ArrowRight, BarChart3, MessageCircle, Wallet, MapPin, Phone, Mail } from "lucide-react";
 
 export default function LandingPage() {
+  const currentYear = new Date().getFullYear();
+
   return (
-    <div className="min-h-screen bg-white font-sans text-slate-900">
-      {/* Navigation */}
-      <nav className="border-b border-slate-100 bg-white sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16 items-center">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-slate-900 rounded flex items-center justify-center text-white font-bold text-sm">EC</div>
-              <span className="text-lg font-semibold tracking-tight text-slate-900">EduCore</span>
-            </div>
-            <div className="hidden md:flex items-center gap-8">
-              <Link href="/login" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">Sign In</Link>
-              <Link href="#features" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">Features</Link>
-              <Link href="#contact" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">Contact</Link>
-              <Link href="/login" className="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors">Get Started</Link>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      {/* Hero Section */}
-      <section className="relative pt-24 pb-32 bg-slate-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-200 text-slate-700 text-xs font-medium uppercase tracking-wider mb-6">
-              <GraduationCap className="w-3 h-3" /> For Schools & Institutions
-            </div>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-slate-900 leading-[1.15] mb-6 tracking-tight">
-              School management<br />
-              <span className="text-slate-700">made simple</span>
-            </h1>
-            <p className="text-lg md:text-xl text-slate-600 mb-8 leading-relaxed max-w-2xl">
-              Track attendance, manage grades, collect fees, and communicate with parents — 
-              all from one system. Report cards delivered automatically via WhatsApp.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Link href="/login" className="inline-flex items-center justify-center gap-2 bg-slate-900 text-white px-6 py-3 rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors">
-                Access School Portal <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
-            <p className="text-sm text-slate-500 mt-4">
-              Existing schools: sign in to your dashboard
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Features Grid */}
-      <section id="features" className="py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="mb-16">
-            <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-4">What you get</h2>
-            <p className="text-slate-600 max-w-xl">A complete school management system with everything your staff needs.</p>
-          </div>
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-900 selection:bg-slate-200">
+      {/* SECTION 1 — HERO */}
+      <section 
+        className="relative pt-24 pb-32 text-center text-white overflow-hidden"
+        style={{ backgroundColor: schoolConfig.primaryColor }}
+      >
+        <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          {schoolConfig.logoUrl && (
+            <img 
+              src={schoolConfig.logoUrl} 
+              alt={`${schoolConfig.name} Logo`} 
+              className="w-24 h-24 mx-auto rounded-full border-4 border-white/20 mb-8 object-cover bg-white"
+            />
+          )}
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="p-6 rounded-2xl border border-slate-200 hover:border-slate-300 transition-colors">
-              <ClipboardCheck className="w-8 h-8 text-slate-700 mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Attendance</h3>
-              <p className="text-slate-600 text-sm leading-relaxed">
-                Daily attendance marked on mobile. Automatic alerts sent to parents when children are absent.
-              </p>
-            </div>
+          <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight mb-4 drop-shadow-sm">
+            {schoolConfig.name}
+          </h1>
+          
+          {schoolConfig.tagline && (
+            <p className="text-xl md:text-2xl text-white/90 mb-10 max-w-3xl mx-auto font-medium">
+              {schoolConfig.tagline}
+            </p>
+          )}
 
-            <div className="p-6 rounded-2xl border border-slate-200 hover:border-slate-300 transition-colors">
-              <FileText className="w-8 h-8 text-slate-700 mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Grades & Reports</h3>
-              <p className="text-slate-600 text-sm leading-relaxed">
-                Record scores and generate professional report cards. Auto-distributed to parents.
-              </p>
-            </div>
-
-            <div className="p-6 rounded-2xl border border-slate-200 hover:border-slate-300 transition-colors">
-              <Wallet className="w-8 h-8 text-slate-700 mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Fee Management</h3>
-              <p className="text-slate-600 text-sm leading-relaxed">
-                Track fees, record payments, and generate receipts. Know exactly who owes what.
-              </p>
-            </div>
-
-            <div className="p-6 rounded-2xl border border-slate-200 hover:border-slate-300 transition-colors">
-              <MessageCircle className="w-8 h-8 text-slate-700 mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Parent Communication</h3>
-              <p className="text-slate-600 text-sm leading-relaxed">
-                Send updates via WhatsApp. Bulk messaging for class or entire school.
-              </p>
-            </div>
-
-            <div className="p-6 rounded-2xl border border-slate-200 hover:border-slate-300 transition-colors">
-              <Users className="w-8 h-8 text-slate-700 mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Student Records</h3>
-              <p className="text-slate-600 text-sm leading-relaxed">
-                Complete student profiles. Enrollment history and academic records maintained.
-              </p>
-            </div>
-
-            <div className="p-6 rounded-2xl border border-slate-200 hover:border-slate-300 transition-colors">
-              <BarChart3 className="w-8 h-8 text-slate-700 mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Reports & Analytics</h3>
-              <p className="text-slate-600 text-sm leading-relaxed">
-                See attendance trends, fee collection, and academic performance at a glance.
-              </p>
-            </div>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <Link 
+              href="/login"
+              className="w-full sm:w-auto px-8 py-4 rounded-xl text-base font-bold bg-white transition-transform hover:scale-105 hover:shadow-xl active:scale-95 shadow-md flex items-center justify-center gap-2"
+              style={{ color: schoolConfig.primaryColor }}
+            >
+              Login to Portal <ArrowRight className="w-5 h-5" />
+            </Link>
+            <Link 
+              href="/apply"
+              className="w-full sm:w-auto px-8 py-4 rounded-xl text-base font-bold bg-transparent border-2 border-white/80 text-white transition-all hover:bg-white/10 hover:border-white active:scale-95 flex items-center justify-center"
+            >
+              Apply for Admission
+            </Link>
           </div>
         </div>
+        
+        {/* Subtle background pattern/gradient */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
       </section>
 
-      {/* How It Works */}
-      <section className="py-24 bg-slate-50">
+      {/* SECTION 2 — WHAT PARENTS AND STUDENTS GET */}
+      <section className="py-24 bg-white relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="mb-16">
-            <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-4">How it works</h2>
-            <p className="text-slate-600 max-w-xl">Get started in three simple steps.</p>
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold text-slate-900 mb-4">Everything you need in one place</h2>
+            <p className="text-slate-600 text-lg max-w-2xl mx-auto">
+              Our secure digital portal gives you instant access to essential school information and services.
+            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="relative">
-              <div className="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold mb-4">1</div>
-              <h4 className="text-lg font-semibold mb-2">Set Up</h4>
-              <p className="text-slate-600 text-sm leading-relaxed">
-                Create your school account and import existing student data via CSV.
+            {/* Feature 1 */}
+            <div className="p-8 rounded-2xl bg-slate-50 border border-slate-100 hover:shadow-lg hover:border-slate-200 transition-all group">
+              <div 
+                className="w-14 h-14 rounded-xl flex items-center justify-center mb-6 shadow-sm group-hover:scale-110 transition-transform"
+                style={{ backgroundColor: `${schoolConfig.accentColor}15`, color: schoolConfig.accentColor }}
+              >
+                <BarChart3 className="w-7 h-7" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-3">Track Academic Progress</h3>
+              <p className="text-slate-600 leading-relaxed">
+                View grades, attendance records, and performance reports anytime from any device. Stay connected to your child&apos;s education.
               </p>
             </div>
 
-            <div className="relative">
-              <div className="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold mb-4">2</div>
-              <h4 className="text-lg font-semibold mb-2">Daily Use</h4>
-              <p className="text-slate-600 text-sm leading-relaxed">
-                Teachers mark attendance and grades on their phones.
+            {/* Feature 2 */}
+            <div className="p-8 rounded-2xl bg-slate-50 border border-slate-100 hover:shadow-lg hover:border-slate-200 transition-all group">
+              <div 
+                className="w-14 h-14 rounded-xl flex items-center justify-center mb-6 shadow-sm group-hover:scale-110 transition-transform"
+                style={{ backgroundColor: `${schoolConfig.primaryColor}15`, color: schoolConfig.primaryColor }}
+              >
+                <MessageCircle className="w-7 h-7" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-3">Reports on WhatsApp</h3>
+              <p className="text-slate-600 leading-relaxed">
+                Receive report cards, fee receipts, and school announcements directly on WhatsApp. No more lost paper letters.
               </p>
             </div>
 
-            <div className="relative">
-              <div className="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold mb-4">3</div>
-              <h4 className="text-lg font-semibold mb-2">Stay Connected</h4>
-              <p className="text-slate-600 text-sm leading-relaxed">
-                Parents receive automatic updates. No additional app required.
+            {/* Feature 3 */}
+            <div className="p-8 rounded-2xl bg-slate-50 border border-slate-100 hover:shadow-lg hover:border-slate-200 transition-all group">
+              <div 
+                className="w-14 h-14 rounded-xl flex items-center justify-center mb-6 shadow-sm group-hover:scale-110 transition-transform bg-amber-50 text-amber-600"
+              >
+                <Wallet className="w-7 h-7" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-3">Fee Management</h3>
+              <p className="text-slate-600 leading-relaxed">
+                Check your fee balance, view payment history, and download official receipts instantly without visiting the bursar&apos;s office.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Pricing Simple */}
-      <section className="py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-2xl">
-            <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-4">Simple pricing</h2>
-            <p className="text-slate-600 mb-8">
-              One price per student per term. No setup fees, no hidden costs.
-            </p>
+      {/* SECTION 3 — NEW TO THE SCHOOL? */}
+      <section className="py-24 bg-slate-100 border-t border-slate-200">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-slate-900 mb-4">New to {schoolConfig.name}?</h2>
+            <p className="text-slate-600 text-lg">Select the option that best describes you.</p>
+          </div>
 
-            <div className="p-8 rounded-2xl border-2 border-slate-200 bg-slate-50">
-              <div className="flex items-baseline gap-2 mb-4">
-                <span className="text-4xl font-bold">GHS 15</span>
-                <span className="text-slate-600">per student / term</span>
-              </div>
-              <ul className="space-y-3 mb-8">
-                <li className="flex items-center gap-3 text-sm">
-                  <CheckCircle2 className="w-5 h-5 text-green-600" /> Full attendance system
-                </li>
-                <li className="flex items-center gap-3 text-sm">
-                  <CheckCircle2 className="w-5 h-5 text-green-600" /> Grades & report cards
-                </li>
-                <li className="flex items-center gap-3 text-sm">
-                  <CheckCircle2 className="w-5 h-5 text-green-600" /> Fee management
-                </li>
-                <li className="flex items-center gap-3 text-sm">
-                  <CheckCircle2 className="w-5 h-5 text-green-600" /> WhatsApp notifications
-                </li>
-                <li className="flex items-center gap-3 text-sm">
-                  <CheckCircle2 className="w-5 h-5 text-green-600" /> All features included
-                </li>
-              </ul>
-              <Link href="/login" className="inline-flex items-center justify-center gap-2 bg-slate-900 text-white px-6 py-3 rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors w-full">
-                Get Started <ChevronRight className="w-4 h-4" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Parent Registration */}
+            <div className="bg-white p-10 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow text-center flex flex-col h-full">
+              <div className="text-5xl mb-6">👨‍👩‍👧</div>
+              <h3 className="text-2xl font-bold text-slate-900 mb-4">Register as a Parent</h3>
+              <p className="text-slate-600 mb-8 flex-grow">
+                Already have a child enrolled? Create your parent portal account using their admission number to view their records.
+              </p>
+              <Link 
+                href="/register/parent"
+                className="w-full py-4 rounded-xl text-white font-semibold text-center hover:opacity-90 transition-opacity"
+                style={{ backgroundColor: schoolConfig.primaryColor }}
+              >
+                Register Now &rarr;
+              </Link>
+            </div>
+
+            {/* Student Admission */}
+            <div className="bg-white p-10 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow text-center flex flex-col h-full">
+              <div className="text-5xl mb-6">🎓</div>
+              <h3 className="text-2xl font-bold text-slate-900 mb-4">Apply for Admission</h3>
+              <p className="text-slate-600 mb-8 flex-grow">
+                New student? Submit an admission application online and our administrative team will be in touch with next steps.
+              </p>
+              <Link 
+                href="/apply"
+                className="w-full py-4 rounded-xl text-white font-semibold text-center hover:opacity-90 transition-opacity"
+                style={{ backgroundColor: schoolConfig.accentColor }}
+              >
+                Apply Now &rarr;
               </Link>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Contact Section */}
-      <section id="contact" className="py-24 bg-slate-900 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
-            <div>
-              <h2 className="text-2xl md:text-3xl font-bold mb-4">Get in touch</h2>
-              <p className="text-slate-400 mb-8">Ready to modernize your school? Let us tell you more.</p>
+      {/* SECTION 4 — CONTACT */}
+      {(schoolConfig.phone || schoolConfig.email || schoolConfig.address) && (
+        <section className="py-20 bg-white border-t border-slate-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-3xl mx-auto text-center">
+              <h2 className="text-2xl font-bold text-slate-900 mb-10">Contact the School Office</h2>
               
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <Phone className="w-5 h-5 text-slate-400" />
-                  <span>+233 20 000 0000</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Mail className="w-5 h-5 text-slate-400" />
-                  <span>hello@educore.com</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <MapPin className="w-5 h-5 text-slate-400" />
-                  <span>Accra, Ghana</span>
-                </div>
+              <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-12 mb-10 text-slate-600">
+                {schoolConfig.phone && (
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-700">
+                      <Phone className="w-5 h-5" />
+                    </div>
+                    <span className="font-medium text-lg">{schoolConfig.phone}</span>
+                  </div>
+                )}
+                
+                {schoolConfig.email && (
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-700">
+                      <Mail className="w-5 h-5" />
+                    </div>
+                    <span className="font-medium text-lg">{schoolConfig.email}</span>
+                  </div>
+                )}
               </div>
-            </div>
 
-            <form className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <input 
-                  type="text" 
-                  placeholder="Your name" 
-                  className="w-full px-4 py-3 rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-slate-400 focus:outline-none focus:border-slate-500"
-                />
-                <input 
-                  type="text" 
-                  placeholder="School name" 
-                  className="w-full px-4 py-3 rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-slate-400 focus:outline-none focus:border-slate-500"
-                />
-              </div>
-              <input 
-                type="email" 
-                placeholder="Email address" 
-                className="w-full px-4 py-3 rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-slate-400 focus:outline-none focus:border-slate-500"
-              />
-              <textarea 
-                placeholder="Tell us about your school" 
-                rows={4}
-                className="w-full px-4 py-3 rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-slate-400 focus:outline-none focus:border-slate-500 resize-none"
-              />
-              <button type="submit" className="w-full bg-white text-slate-900 px-6 py-3 rounded-lg font-medium hover:bg-slate-100 transition-colors">
-                Send Message
-              </button>
-            </form>
-          </div>
-        </div>
-      </section>
+              {schoolConfig.address && (
+                <div className="flex items-center justify-center gap-3 text-slate-600 mb-10">
+                  <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 flex-shrink-0">
+                    <MapPin className="w-5 h-5" />
+                  </div>
+                  <span className="font-medium text-lg">{schoolConfig.address}</span>
+                </div>
+              )}
 
-      {/* Footer */}
-      <footer className="bg-white border-t border-slate-100 py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 bg-slate-900 rounded flex items-center justify-center text-white font-bold text-xs">EC</div>
-              <span className="text-base font-medium">EduCore</span>
-            </div>
-            <div className="flex gap-6 text-sm text-slate-500">
-              <Link href="/login" className="hover:text-slate-900">Sign In</Link>
-              <Link href="#" className="hover:text-slate-900">Privacy</Link>
-              <Link href="#" className="hover:text-slate-900">Terms</Link>
-            </div>
-          </div>
-          <div className="mt-8 pt-8 border-t border-slate-100">
-            <div className="flex flex-col items-center gap-4 text-center">
-              <p className="text-sm font-bold tracking-widest text-slate-900 uppercase">Built by Abdul Anas</p>
-              <p className="text-xs font-medium text-slate-500">@abdulanasbuilds</p>
-              <div className="flex items-center gap-6">
-                <a href="https://twitter.com/abdulanasbuilds" target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-slate-900 transition-colors">
-                  <Twitter className="w-5 h-5" />
+              {schoolConfig.whatsapp && (
+                <a 
+                  href={`https://wa.me/${schoolConfig.whatsapp.replace(/[^0-9]/g, '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-3 bg-[#25D366] text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-[#20bd5a] transition-colors shadow-sm"
+                >
+                  <MessageCircle className="w-6 h-6" />
+                  Chat on WhatsApp
                 </a>
-                <a href="https://github.com/abdulanasbuilds" target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-slate-900 transition-colors">
-                  <Github className="w-5 h-5" />
-                </a>
-                <a href="https://linkedin.com/in/abdulanasbuilds" target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-slate-900 transition-colors">
-                  <Linkedin className="w-5 h-5" />
-                </a>
-                <a href="https://instagram.com/abdulanasbuilds" target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-slate-900 transition-colors">
-                  <Instagram className="w-5 h-5" />
-                </a>
-                <a href="https://tiktok.com/@abdulanasbuilds" target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-slate-900 transition-colors">
-                  <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.17-2.89-.6-4.13-1.47-.13 3.44-.3 6.88-.45 10.32-.07 1.34-.34 2.76-1.12 3.89-1.28 1.84-3.59 2.73-5.85 2.51-2.15-.22-4.14-1.42-5.18-3.32-1.28-2.34-.95-5.5.9-7.4 1.25-1.28 3.03-1.84 4.79-1.63v4.13c-.93-.11-1.92.1-2.65.73-.85.73-1.1 2.02-.62 2.99.52 1.04 1.77 1.66 2.92 1.4 1.05-.24 1.8-1.2 1.85-2.27.14-3.95.28-7.91.43-11.86.03-1.4.15-2.8.27-4.19z"/>
-                  </svg>
-                </a>
-              </div>
+              )}
             </div>
           </div>
-          <div className="mt-6 text-center text-xs text-slate-400">
-            &copy; {new Date().getFullYear()} EduCore. All rights reserved.
+        </section>
+      )}
+
+      {/* FOOTER */}
+      <footer className="bg-slate-900 py-12 text-slate-400 text-center border-t border-slate-800">
+        <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-6">
+          <p className="font-medium text-slate-300">
+            {schoolConfig.name} &copy; {currentYear}
+          </p>
+          <div className="flex gap-6 text-sm font-medium">
+            <Link href="/login" className="hover:text-white transition-colors">Login</Link>
+            <Link href="/apply" className="hover:text-white transition-colors">Apply for Admission</Link>
+            <Link href="/register/parent" className="hover:text-white transition-colors">Parent Registration</Link>
           </div>
+          <p className="text-xs text-slate-500 opacity-70">
+            Powered by technology
+          </p>
         </div>
       </footer>
     </div>

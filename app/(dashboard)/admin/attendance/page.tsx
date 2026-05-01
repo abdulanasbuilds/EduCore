@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { createClient } from "@/lib/supabase/server";
 import { EmptyState } from "@/components/shared/empty-state";
 import Link from "next/link";
@@ -131,3 +132,4 @@ export default async function AdminAttendancePage({
     </div>
   );
 }
+

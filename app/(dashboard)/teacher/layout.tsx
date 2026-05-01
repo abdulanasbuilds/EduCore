@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
@@ -17,7 +18,7 @@ export default async function TeacherLayout({
     .eq("id", user.id)
     .single();
 
-  if (!profile || !["CLASS_TEACHER", "SUPER_ADMIN", "SCHOOL_ADMIN"].includes(profile.role)) {
+  if (!profile || !["class_teacher", "school_admin"].includes(profile.role)) {
     redirect("/login");
   }
 
@@ -35,3 +36,4 @@ export default async function TeacherLayout({
     </div>
   );
 }
+

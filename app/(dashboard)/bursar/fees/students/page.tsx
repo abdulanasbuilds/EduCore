@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { createClient } from "@/lib/supabase/server";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Download, Filter, MessageSquare, History } from "lucide-react";
@@ -178,3 +179,4 @@ export default async function BursarStudentsPage({
     </div>
   );
 }
+

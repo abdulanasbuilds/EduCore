@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { createClient } from "@/lib/supabase/server";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Lock, Calendar } from "lucide-react";
@@ -148,3 +149,4 @@ export default async function AcademicYearPage() {
     </div>
   );
 }
+

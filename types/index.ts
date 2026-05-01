@@ -3,13 +3,12 @@
 // ==========================================
 
 export type UserRole =
-  | 'SUPER_ADMIN'
-  | 'SCHOOL_ADMIN'
-  | 'CLASS_TEACHER'
-  | 'SUBJECT_TEACHER'
-  | 'BURSAR'
-  | 'PARENT'
-  | 'STUDENT';
+  | 'school_admin'
+  | 'class_teacher'
+  | 'subject_teacher'
+  | 'bursar'
+  | 'parent'
+  | 'student';
 
 export type StudentStatusType = 'Active' | 'Inactive' | 'Alumni' | 'Withdrawn' | 'Graduated';
 export type AttendanceStatus = 'Present' | 'Absent' | 'Late' | 'Excused';

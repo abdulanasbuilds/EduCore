@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 export default function SetupPage() {
   const vars = [
     {
@@ -19,34 +21,16 @@ export default function SetupPage() {
       required: true,
     },
     {
-      name: "TWILIO_ACCOUNT_SID",
-      description: "Twilio Account SID for SMS",
-      where: "twilio.com - Console Dashboard",
-      required: false,
-    },
-    {
-      name: "TWILIO_AUTH_TOKEN",
-      description: "Twilio Auth Token",
-      where: "twilio.com - Console Dashboard",
-      required: false,
-    },
-    {
-      name: "TWILIO_PHONE_NUMBER",
-      description: "Your Twilio phone number",
-      where: "twilio.com - Phone Numbers",
-      required: false,
-    },
-    {
-      name: "RESEND_API_KEY",
-      description: "Resend API key for emails",
-      where: "resend.com - API Keys",
-      required: false,
+      name: "NEXT_PUBLIC_SCHOOL_NAME",
+      description: "Name of the school",
+      where: "e.g. Greenfield Academy",
+      required: true,
     },
     {
       name: "NEXT_PUBLIC_APP_URL",
       description: "Your deployed app URL",
       where: "e.g. https://yourschool.vercel.app",
-      required: true,
+      required: false,
     },
   ]
 
@@ -55,10 +39,10 @@ export default function SetupPage() {
       <div className="max-w-2xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-slate-900 mb-2">
-            EduCore Setup
+            System Setup
           </h1>
           <p className="text-slate-600">
-            Your EduCore deployment is running but needs to be 
+            Your deployment is running but needs to be 
             configured. Add the following environment variables 
             to your hosting platform.
           </p>
@@ -66,13 +50,13 @@ export default function SetupPage() {
 
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
           <p className="text-blue-800 text-sm font-medium">
-            Where to add these on Vercel:
+            Where to add these:
           </p>
           <p className="text-blue-700 text-sm mt-1">
-            Project - Settings - Environment Variables - Add variable
+            Project Settings - Environment Variables
           </p>
           <p className="text-blue-700 text-sm">
-            Then go to: Deploys - Trigger Deploy - Deploy site
+            Then trigger a new deployment.
           </p>
         </div>
 
@@ -110,18 +94,17 @@ export default function SetupPage() {
             After adding variables:
           </h2>
           <ol className="space-y-2 text-sm text-slate-600 list-decimal list-inside">
-            <li>Go back to Vercel - Deploys</li>
-            <li>Click Trigger deploy - Deploy site</li>
+            <li>Trigger a new deployment</li>
             <li>Wait for deployment to complete</li>
             <li>Visit your site - it will load the login page</li>
-            <li>Create your first admin account in Supabase Auth</li>
+            <li>Create your first school_admin account in Supabase Auth</li>
           </ol>
         </div>
 
         <div className="mt-6 text-center">
           <a href="/login" 
-             className="text-slate-800 text-sm underline">
-            Already configured - Go to Login
+             className="text-slate-800 text-sm underline hover:text-blue-600">
+            Already configured? Go to Login
           </a>
         </div>
       </div>

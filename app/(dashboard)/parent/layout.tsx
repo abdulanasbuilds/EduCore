@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
@@ -17,7 +18,7 @@ export default async function ParentLayout({
     .eq("id", user.id)
     .single();
 
-  if (!profile || profile.role !== "PARENT") {
+  if (!profile || profile.role !== "parent") {
     redirect("/login");
   }
 
@@ -35,3 +36,4 @@ export default async function ParentLayout({
     </div>
   );
 }
+

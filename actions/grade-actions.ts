@@ -25,6 +25,7 @@ export async function createAssessmentAction(
 
     const data = parsed.data;
     const supabase = await createClient();
+    if (!supabase) return { success: false, message: "Supabase not configured" };
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, message: "Unauthorized" };
 
@@ -34,7 +35,7 @@ export async function createAssessmentAction(
       .eq("id", user.id)
       .single();
 
-    if (!profile?.school_id || !["SCHOOL_ADMIN", "CLASS_TEACHER", "SUBJECT_TEACHER"].includes(profile.role)) {
+    if (!profile?.school_id || !["school_admin", "class_teacher", "subject_teacher"].includes(profile.role)) {
       return { success: false, message: "Unauthorized: Only teachers and admins can create assessments" };
     }
 
@@ -90,6 +91,7 @@ export async function submitGradesAction(
 
     const data = parsed.data;
     const supabase = await createClient();
+    if (!supabase) return { success: false, message: "Supabase not configured" };
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, message: "Unauthorized" };
 
@@ -99,7 +101,7 @@ export async function submitGradesAction(
       .eq("id", user.id)
       .single();
 
-    if (!profile?.school_id || !["SCHOOL_ADMIN", "CLASS_TEACHER", "SUBJECT_TEACHER"].includes(profile.role)) {
+    if (!profile?.school_id || !["school_admin", "class_teacher", "subject_teacher"].includes(profile.role)) {
       return { success: false, message: "Unauthorized: Only teachers and admins can submit grades" };
     }
 
@@ -154,6 +156,7 @@ export async function publishAssessmentAction(
 ): Promise<ActionResponse> {
   try {
     const supabase = await createClient();
+    if (!supabase) return { success: false, message: "Supabase not configured" };
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, message: "Unauthorized" };
 
@@ -163,7 +166,7 @@ export async function publishAssessmentAction(
       .eq("id", user.id)
       .single();
 
-    if (!["SCHOOL_ADMIN", "CLASS_TEACHER", "SUBJECT_TEACHER"].includes(profile?.role || "")) {
+    if (!["school_admin", "class_teacher", "subject_teacher"].includes(profile?.role || "")) {
       return { success: false, message: "Unauthorized: Only teachers and admins can publish assessments" };
     }
 
@@ -187,6 +190,7 @@ export async function deleteAssessmentAction(
 ): Promise<ActionResponse> {
   try {
     const supabase = await createClient();
+    if (!supabase) return { success: false, message: "Supabase not configured" };
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, message: "Unauthorized" };
 
@@ -196,7 +200,7 @@ export async function deleteAssessmentAction(
       .eq("id", user.id)
       .single();
 
-    if (!["SCHOOL_ADMIN"].includes(profile?.role || "")) {
+    if (!["school_admin"].includes(profile?.role || "")) {
       return { success: false, message: "Unauthorized: Only admins can delete assessments" };
     }
 

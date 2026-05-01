@@ -24,6 +24,7 @@ export async function recordPaymentAction(
 
     const data = parsed.data;
     const supabase = await createClient();
+    if (!supabase) return { success: false, message: "Supabase not configured" };
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, message: "Unauthorized" };
 
@@ -33,7 +34,7 @@ export async function recordPaymentAction(
       .eq("id", user.id)
       .single();
 
-    if (!profile?.school_id || !["SCHOOL_ADMIN", "BURSAR"].includes(profile.role)) {
+    if (!profile?.school_id || !["school_admin", "bursar"].includes(profile.role)) {
       return { success: false, message: "Unauthorized: Only admins and bursars can record payments" };
     }
 
@@ -125,6 +126,7 @@ export async function setupFeesAction(
 
     const data = parsed.data;
     const supabase = await createClient();
+    if (!supabase) return { success: false, message: "Supabase not configured" };
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, message: "Unauthorized" };
 
@@ -134,7 +136,7 @@ export async function setupFeesAction(
       .eq("id", user.id)
       .single();
 
-    if (!profile?.school_id || !["SCHOOL_ADMIN", "BURSAR"].includes(profile.role)) {
+    if (!profile?.school_id || !["school_admin", "bursar"].includes(profile.role)) {
       return { success: false, message: "Unauthorized: Only admins and bursars can set up fees" };
     }
 
@@ -185,6 +187,7 @@ export async function createFeeTypeAction(
 ): Promise<ActionResponse<{ id: string }>> {
   try {
     const supabase = (await createClient()) as any;
+    if (!supabase) return { success: false, message: "Supabase not configured" };
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, message: "Unauthorized" };
 

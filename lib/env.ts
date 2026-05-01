@@ -1,65 +1,60 @@
 import { z } from "zod"
 
 const envSchema = z.object({
-  NEXT_PUBLIC_SUPABASE_URL: z.string().url().optional(),
+  NEXT_PUBLIC_SUPABASE_URL: z.string().optional(),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().optional(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
-
   TWILIO_ACCOUNT_SID: z.string().optional(),
   TWILIO_AUTH_TOKEN: z.string().optional(),
   TWILIO_PHONE_NUMBER: z.string().optional(),
-
   RESEND_API_KEY: z.string().optional(),
-
   CLOUDINARY_CLOUD_NAME: z.string().optional(),
   CLOUDINARY_API_KEY: z.string().optional(),
   CLOUDINARY_API_SECRET: z.string().optional(),
-
   UPSTASH_REDIS_REST_URL: z.string().optional(),
   UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
-
-  NEXT_PUBLIC_APP_URL: z.string().url().optional(),
+  NEXT_PUBLIC_APP_URL: z.string().optional().default("http://localhost:3000"),
+  NEXT_PUBLIC_SCHOOL_NAME: z.string().optional().default("School Portal"),
+  NEXT_PUBLIC_SCHOOL_TAGLINE: z.string().optional().default(""),
+  NEXT_PUBLIC_SCHOOL_LOGO_URL: z.string().optional().default(""),
+  NEXT_PUBLIC_SCHOOL_PRIMARY_COLOR: z.string().optional().default("#1e3a5f"),
+  NEXT_PUBLIC_SCHOOL_ACCENT_COLOR: z.string().optional().default("#16a34a"),
+  NEXT_PUBLIC_SCHOOL_PHONE: z.string().optional().default(""),
+  NEXT_PUBLIC_SCHOOL_EMAIL: z.string().optional().default(""),
+  NEXT_PUBLIC_SCHOOL_ADDRESS: z.string().optional().default(""),
+  NEXT_PUBLIC_SCHOOL_WHATSAPP: z.string().optional().default(""),
   CRON_SECRET: z.string().optional(),
-
-  NODE_ENV: z.enum(["development", "production", "test"]).optional(),
+  NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
 })
 
+// Parse without throwing — build must always succeed
 const result = envSchema.safeParse(process.env)
-const data = result.success ? result.data : {}
+export const env = result.success ? result.data : ({} as z.infer<typeof envSchema>)
 
-export const env = {
-  NEXT_PUBLIC_SUPABASE_URL: data.NEXT_PUBLIC_SUPABASE_URL || "",
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: data.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
-  SUPABASE_SERVICE_ROLE_KEY: data.SUPABASE_SERVICE_ROLE_KEY || "",
-  TWILIO_ACCOUNT_SID: data.TWILIO_ACCOUNT_SID || "",
-  TWILIO_AUTH_TOKEN: data.TWILIO_AUTH_TOKEN || "",
-  TWILIO_PHONE_NUMBER: data.TWILIO_PHONE_NUMBER || "",
-  RESEND_API_KEY: data.RESEND_API_KEY || "",
-  CLOUDINARY_CLOUD_NAME: data.CLOUDINARY_CLOUD_NAME || "",
-  CLOUDINARY_API_KEY: data.CLOUDINARY_API_KEY || "",
-  CLOUDINARY_API_SECRET: data.CLOUDINARY_API_SECRET || "",
-  UPSTASH_REDIS_REST_URL: data.UPSTASH_REDIS_REST_URL || "",
-  UPSTASH_REDIS_REST_TOKEN: data.UPSTASH_REDIS_REST_TOKEN || "",
-  NEXT_PUBLIC_APP_URL: data.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
-  CRON_SECRET: data.CRON_SECRET || "",
-  NODE_ENV: data.NODE_ENV || "development",
-}
-
+// Feature flags — true only when keys exist at runtime
 export const features = {
-  supabaseEnabled: !!(data.NEXT_PUBLIC_SUPABASE_URL && data.NEXT_PUBLIC_SUPABASE_ANON_KEY),
-  smsEnabled: !!(data.TWILIO_ACCOUNT_SID && data.TWILIO_AUTH_TOKEN),
-  emailEnabled: !!data.RESEND_API_KEY,
-  imageUploadEnabled: !!data.CLOUDINARY_CLOUD_NAME,
-  rateLimitEnabled: !!data.UPSTASH_REDIS_REST_URL,
+  supabaseConfigured: !!(
+    process.env.NEXT_PUBLIC_SUPABASE_URL && 
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  ),
+  smsEnabled: !!(
+    process.env.TWILIO_ACCOUNT_SID && 
+    process.env.TWILIO_AUTH_TOKEN
+  ),
+  emailEnabled: !!process.env.RESEND_API_KEY,
+  imageUploadEnabled: !!process.env.CLOUDINARY_CLOUD_NAME,
+  rateLimitEnabled: !!process.env.UPSTASH_REDIS_REST_URL,
 }
 
-export function requireSupabase() {
-  if (!features.supabaseEnabled) {
-    throw new Error(
-      "Supabase not configured. " +
-      "Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY " +
-      "environment variables to your hosting platform."
-    )
-  }
-  return true
+// School branding — used everywhere instead of hardcoded names
+export const schoolConfig = {
+  name: process.env.NEXT_PUBLIC_SCHOOL_NAME ?? "School Portal",
+  tagline: process.env.NEXT_PUBLIC_SCHOOL_TAGLINE ?? "",
+  logoUrl: process.env.NEXT_PUBLIC_SCHOOL_LOGO_URL ?? "",
+  primaryColor: process.env.NEXT_PUBLIC_SCHOOL_PRIMARY_COLOR ?? "#1e3a5f",
+  accentColor: process.env.NEXT_PUBLIC_SCHOOL_ACCENT_COLOR ?? "#16a34a",
+  phone: process.env.NEXT_PUBLIC_SCHOOL_PHONE ?? "",
+  email: process.env.NEXT_PUBLIC_SCHOOL_EMAIL ?? "",
+  address: process.env.NEXT_PUBLIC_SCHOOL_ADDRESS ?? "",
+  whatsapp: process.env.NEXT_PUBLIC_SCHOOL_WHATSAPP ?? "",
 }

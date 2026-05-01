@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { format } from "date-fns";
@@ -118,3 +119,4 @@ export default async function StudentsPage() {
     </div>
   );
 }
+

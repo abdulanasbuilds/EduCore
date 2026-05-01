@@ -1,16 +1,20 @@
 import { createClient } from "@supabase/supabase-js"
-import { env } from "@/lib/env"
-import type { Database } from "@/types/supabase"
 
 export function createAdminClient() {
-  return createClient<Database>(
-    env.NEXT_PUBLIC_SUPABASE_URL,
-    env.SUPABASE_SERVICE_ROLE_KEY,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    }
-  )
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  if (!url || !key) {
+    throw new Error(
+      "Supabase admin not configured. Add NEXT_PUBLIC_SUPABASE_URL " +
+      "and SUPABASE_SERVICE_ROLE_KEY to your environment variables."
+    )
+  }
+
+  return createClient(url, key, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  })
 }

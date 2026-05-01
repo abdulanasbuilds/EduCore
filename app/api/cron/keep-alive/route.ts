@@ -13,6 +13,8 @@ export async function GET(request: Request) {
 
   try {
     const supabase = createAdminClient()
+    if (!supabase) throw new Error("System not configured")
+    
     // Simple ping — just count schools
     const { count, error } = await supabase
       .from("schools")

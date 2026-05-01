@@ -1,9 +1,13 @@
 import type { NextConfig } from "next"
 
 const nextConfig: NextConfig = {
-  // Required for Netlify deployment
-  output: undefined, // Do NOT set to 'export' or 'standalone' for Netlify
-  
+  // Force dynamic rendering for all routes
+  // Required because pages use Supabase auth at runtime
+  experimental: {
+    serverActions: {
+      allowedOrigins: ["localhost:3000"],
+    },
+  },
   images: {
     remotePatterns: [
       {
@@ -11,27 +15,13 @@ const nextConfig: NextConfig = {
         hostname: "res.cloudinary.com",
       },
       {
-        protocol: "https",
+        protocol: "https", 
         hostname: "*.supabase.co",
       },
     ],
   },
-
-  // Suppress specific build warnings that don't affect functionality
-  typescript: {
-    ignoreBuildErrors: false,
-  },
-  
-  eslint: {
-    ignoreDuringBuilds: false,
-  },
-
-  experimental: {
-    // Required for Next.js 15 server actions
-    serverActions: {
-      allowedOrigins: ["localhost:3000"],
-    },
-  },
+  // Do NOT set output: 'export' — breaks server features
+  // Do NOT set output: 'standalone' unless specifically needed
 }
 
 export default nextConfig

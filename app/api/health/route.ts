@@ -6,7 +6,7 @@ export async function GET() {
     status: "ok",
     timestamp: new Date().toISOString(),
     configured: {
-      supabase: features.supabaseEnabled,
+      supabase: features.supabaseConfigured,
       sms: features.smsEnabled,
       email: features.emailEnabled,
       images: features.imageUploadEnabled,

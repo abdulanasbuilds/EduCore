@@ -1,24 +1,24 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import "./globals.css";
+import { Inter } from 'next/font/google';
+import './globals.css';
+import { schoolConfig } from "@/lib/env";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
-export const metadata: Metadata = {
-  title: "EduCore - School Management System",
-  description: "Modern, secure, and isolated school management platform.",
-};
+export const metadata = {
+  title: schoolConfig.name,
+  description: schoolConfig.tagline || "School Management Portal",
+}
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: {
+  children: React.ReactNode
+}) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} font-sans antialiased bg-slate-50 text-slate-900`}>
+    <html lang="en" className={inter.variable}>
+      <body className="font-sans">
         {children}
       </body>
     </html>
-  );
+  )
 }

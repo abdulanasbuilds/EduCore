@@ -30,6 +30,7 @@ export async function createAcademicYearAction(
 
     const data = parsed.data;
     const supabase = (await createClient()) as any;
+    if (!supabase) return { success: false, message: "Supabase not configured" };
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, message: "Unauthorized" };
 
@@ -83,6 +84,7 @@ export async function createAcademicYearAction(
 export async function setCurrentYearAction(yearId: string): Promise<ActionResponse> {
   try {
     const supabase = (await createClient()) as any;
+    if (!supabase) return { success: false, message: "Supabase not configured" };
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, message: "Unauthorized" };
 
@@ -116,6 +118,7 @@ export async function setCurrentYearAction(yearId: string): Promise<ActionRespon
 export async function closeTermAction(termId: string): Promise<ActionResponse> {
   try {
     const supabase = (await createClient()) as any;
+    if (!supabase) return { success: false, message: "Supabase not configured" };
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, message: "Unauthorized" };
 
@@ -134,6 +137,7 @@ export async function closeTermAction(termId: string): Promise<ActionResponse> {
 export async function openTermAction(termId: string): Promise<ActionResponse> {
   try {
     const supabase = (await createClient()) as any;
+    if (!supabase) return { success: false, message: "Supabase not configured" };
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, message: "Unauthorized" };
 
@@ -167,6 +171,7 @@ export async function openTermAction(termId: string): Promise<ActionResponse> {
 export async function closeAcademicYearAction(yearId: string): Promise<ActionResponse> {
   try {
     const supabase = (await createClient()) as any;
+    if (!supabase) return { success: false, message: "Supabase not configured" };
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, message: "Unauthorized" };
 
@@ -205,6 +210,7 @@ export async function executePromotionsAction(
 
     const data = parsed.data;
     const supabase = (await createClient()) as any;
+    if (!supabase) return { success: false, message: "Supabase not configured" };
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, message: "Unauthorized" };
 

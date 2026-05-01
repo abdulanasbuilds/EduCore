@@ -28,6 +28,7 @@ export async function submitAttendanceAction(
 
     const data = parsed.data;
     const supabase = await createClient();
+    if (!supabase) return { success: false, message: "Supabase not configured" };
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, message: "Unauthorized" };
 
@@ -37,7 +38,7 @@ export async function submitAttendanceAction(
       .eq("id", user.id)
       .single() as any;
 
-    if (!profile?.school_id || !["SCHOOL_ADMIN", "CLASS_TEACHER"].includes(profile?.role)) {
+    if (!profile?.school_id || !["school_admin", "class_teacher"].includes(profile?.role)) {
       return { success: false, message: "Unauthorized: Only class teachers and admins can submit attendance" };
     }
  
@@ -91,6 +92,7 @@ export async function updateAttendanceAction(
 ): Promise<ActionResponse> {
   try {
     const supabase = await createClient();
+    if (!supabase) return { success: false, message: "Supabase not configured" };
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, message: "Unauthorized" };
 
@@ -100,7 +102,7 @@ export async function updateAttendanceAction(
       .eq("id", user.id)
       .single();
 
-    if (!["SCHOOL_ADMIN", "CLASS_TEACHER"].includes(profile?.role || "")) {
+    if (!["school_admin", "class_teacher"].includes(profile?.role || "")) {
       return { success: false, message: "Unauthorized: Only class teachers and admins can update attendance" };
     }
 

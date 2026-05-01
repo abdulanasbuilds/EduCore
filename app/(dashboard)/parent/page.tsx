@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { User, ClipboardList, BookOpen, Receipt, Bell } from "lucide-react";
@@ -102,3 +103,4 @@ export default async function ParentPage() {
     </div>
   );
 }
+

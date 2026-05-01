@@ -1,7 +1,6 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
 import type { ActionResponse } from "@/types";
 import { z } from "zod";
 
@@ -40,7 +39,7 @@ export async function createStudentAction(
 
     const data = parsed.data;
     const supabase = (await createClient()) as any;
-    const adminSupabase = createAdminClient() as any;
+    if (!supabase) return { success: false, message: "Supabase not configured" };
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, message: "Unauthorized" };
@@ -51,7 +50,7 @@ export async function createStudentAction(
       .eq("id", user.id)
       .single() as any;
 
-    if (!profile?.school_id || !["SUPER_ADMIN", "SCHOOL_ADMIN"].includes(profile.role)) {
+    if (!profile?.school_id || profile.role !== "school_admin") {
       return { success: false, message: "Unauthorized" };
     }
 
@@ -198,6 +197,7 @@ export async function updateStudentAction(
 ): Promise<ActionResponse> {
   try {
     const supabase = await createClient();
+    if (!supabase) return { success: false, message: "Supabase not configured" };
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, message: "Unauthorized" };
 
@@ -207,7 +207,7 @@ export async function updateStudentAction(
       .eq("id", user.id)
       .single();
 
-    if (!["SCHOOL_ADMIN"].includes(profile?.role || "")) {
+    if (!["school_admin"].includes(profile?.role || "")) {
       return { success: false, message: "Unauthorized: Only admins can update students" };
     }
 
@@ -230,6 +230,7 @@ export async function withdrawStudentAction(
 ): Promise<ActionResponse> {
   try {
     const supabase = await createClient();
+    if (!supabase) return { success: false, message: "Supabase not configured" };
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, message: "Unauthorized" };
 
@@ -239,7 +240,7 @@ export async function withdrawStudentAction(
       .eq("id", user.id)
       .single();
 
-    if (!["SCHOOL_ADMIN"].includes(profile?.role || "")) {
+    if (!["school_admin"].includes(profile?.role || "")) {
       return { success: false, message: "Unauthorized: Only admins can withdraw students" };
     }
 

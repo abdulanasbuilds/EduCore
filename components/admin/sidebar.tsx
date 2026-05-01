@@ -14,6 +14,7 @@ import {
   BarChart3,
   Megaphone,
   Settings,
+  UserPlus,
   X,
 } from "lucide-react";
 
@@ -25,6 +26,7 @@ interface SidebarProps {
 const navLinks = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/students", label: "Students", icon: Users },
+  { href: "/admin/admissions", label: "Admissions", icon: UserPlus },
   { href: "/admin/classes", label: "Classes", icon: School },
   { href: "/admin/teachers", label: "Teachers", icon: GraduationCap },
   { href: "/admin/attendance", label: "Attendance", icon: ClipboardCheck },
@@ -62,7 +64,7 @@ export function AdminSidebar({ open, onClose }: SidebarProps) {
       >
         <div className="p-6 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">EduCore</h1>
+            <h1 className="text-2xl font-bold">{process.env.NEXT_PUBLIC_SCHOOL_NAME ?? "School"}</h1>
             <p className="text-sm opacity-80 mt-1">Admin Panel</p>
           </div>
           <button

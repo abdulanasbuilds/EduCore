@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { createClient } from "@/lib/supabase/server";
 import { StatCard } from "@/components/shared/stat-card";
 import { AttendanceChart, FeeCollectionChart } from "@/components/admin/dashboard-charts";
@@ -170,3 +171,4 @@ export default async function AdminDashboardPage() {
     </div>
   );
 }
+

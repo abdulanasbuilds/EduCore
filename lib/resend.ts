@@ -10,7 +10,7 @@ export async function sendEmail({
   to,
   subject,
   html,
-  from = "EduCore <noreply@educore.app>",
+  from = `${process.env.NEXT_PUBLIC_SCHOOL_NAME ?? "School"} <noreply@${process.env.NEXT_PUBLIC_APP_URL?.replace(/^https?:\/\//, "") ?? "school.app"}>`,
 }: {
   to: string
   subject: string

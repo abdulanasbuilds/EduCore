@@ -1,5 +1,5 @@
 -- ==============================================================================================
--- EduCore - Complete Database Schema
+-- Complete Database Schema
 -- Run this in a fresh Supabase project via SQL Editor or Supabase CLI
 -- ==============================================================================================
 
@@ -10,13 +10,12 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- CUSTOM ENUMS
 -- ==========================================
 CREATE TYPE user_role AS ENUM (
-    'SUPER_ADMIN', 
-    'SCHOOL_ADMIN', 
-    'CLASS_TEACHER', 
-    'SUBJECT_TEACHER', 
-    'BURSAR', 
-    'PARENT', 
-    'STUDENT'
+  'school_admin',
+  'class_teacher',
+  'subject_teacher',
+  'bursar',
+  'parent',
+  'student'
 );
 
 CREATE TYPE student_status_type AS ENUM (
@@ -124,7 +123,7 @@ CREATE TABLE profiles (
     full_name TEXT NOT NULL,
     phone TEXT,
     whatsapp_number TEXT,
-    role user_role NOT NULL DEFAULT 'STUDENT',
+    role user_role NOT NULL DEFAULT 'student',
     avatar_url TEXT,
     is_active BOOLEAN DEFAULT true,
     school_id UUID REFERENCES schools(id) ON DELETE SET NULL,
@@ -465,7 +464,7 @@ BEGIN
         NEW.id,
         NEW.email,
         COALESCE(NEW.raw_user_meta_data->>'full_name', 'New User'),
-        COALESCE((NEW.raw_user_meta_data->>'role')::user_role, 'STUDENT'),
+        COALESCE((NEW.raw_user_meta_data->>'role')::user_role, 'student'),
         (NEW.raw_user_meta_data->>'school_id')::uuid
     );
     RETURN NEW;
@@ -523,14 +522,10 @@ $$ LANGUAGE sql STABLE SECURITY DEFINER;
 -- Schools
 CREATE POLICY "Users can read own school" ON schools
   FOR SELECT USING (id = auth_user_school_id());
-CREATE POLICY "Super admin can read all schools" ON schools
-  FOR SELECT USING (auth_user_role() = 'SUPER_ADMIN');
 
 -- Profiles
 CREATE POLICY "Users can read profiles in own school" ON profiles
   FOR SELECT USING (school_id = auth_user_school_id() OR id = auth.uid());
-CREATE POLICY "Super admin can read all profiles" ON profiles
-  FOR SELECT USING (auth_user_role() = 'SUPER_ADMIN');
 
 -- Academic Years
 CREATE POLICY "Users can read academic years in own school" ON academic_years
@@ -630,145 +625,187 @@ CREATE POLICY "Users can read notification logs in own school" ON notification_l
 -- RLS POLICIES - INSERT/UPDATE/DELETE (role-based)
 -- ==========================================
 
--- Schools: only super_admin can insert/update
-CREATE POLICY "Super admin can insert schools" ON schools
-  FOR INSERT WITH CHECK (auth_user_role() = 'SUPER_ADMIN');
-CREATE POLICY "Super admin can update schools" ON schools
-  FOR UPDATE USING (auth_user_role() = 'SUPER_ADMIN' OR id = auth_user_school_id());
+-- Schools: admin can manage own school
 CREATE POLICY "Admin can update own school" ON schools
-  FOR UPDATE USING (id = auth_user_school_id() AND auth_user_role() = 'SCHOOL_ADMIN');
+  FOR UPDATE USING (id = auth_user_school_id() AND auth_user_role() = 'school_admin');
 
 -- Profiles: admins manage profiles in their school
 CREATE POLICY "Users can update own profile" ON profiles
   FOR UPDATE USING (id = auth.uid());
 CREATE POLICY "Admin can insert profiles" ON profiles
   FOR INSERT WITH CHECK (
-    auth_user_role() IN ('SUPER_ADMIN', 'SCHOOL_ADMIN')
+    auth_user_role() = 'school_admin'
   );
 CREATE POLICY "Admin can update profiles in school" ON profiles
   FOR UPDATE USING (
-    school_id = auth_user_school_id() AND auth_user_role() IN ('SUPER_ADMIN', 'SCHOOL_ADMIN')
+    school_id = auth_user_school_id() AND auth_user_role() = 'school_admin'
   );
 
 -- Academic Years: admin manages
 CREATE POLICY "Admin can manage academic years" ON academic_years
   FOR ALL USING (
-    school_id = auth_user_school_id() AND auth_user_role() IN ('SUPER_ADMIN', 'SCHOOL_ADMIN')
+    school_id = auth_user_school_id() AND auth_user_role() = 'school_admin'
   );
 
 -- Terms: admin manages
 CREATE POLICY "Admin can manage terms" ON terms
   FOR ALL USING (
-    school_id = auth_user_school_id() AND auth_user_role() IN ('SUPER_ADMIN', 'SCHOOL_ADMIN')
+    school_id = auth_user_school_id() AND auth_user_role() = 'school_admin'
   );
 
 -- Classes: admin manages
 CREATE POLICY "Admin can manage classes" ON classes
   FOR ALL USING (
-    school_id = auth_user_school_id() AND auth_user_role() IN ('SUPER_ADMIN', 'SCHOOL_ADMIN')
+    school_id = auth_user_school_id() AND auth_user_role() = 'school_admin'
   );
 
 -- Subjects: admin manages
 CREATE POLICY "Admin can manage subjects" ON subjects
   FOR ALL USING (
-    school_id = auth_user_school_id() AND auth_user_role() IN ('SUPER_ADMIN', 'SCHOOL_ADMIN')
+    school_id = auth_user_school_id() AND auth_user_role() = 'school_admin'
   );
 
 -- Class Subjects: admin manages
 CREATE POLICY "Admin can manage class subjects" ON class_subjects
   FOR ALL USING (
     EXISTS (SELECT 1 FROM classes WHERE classes.id = class_subjects.class_id AND classes.school_id = auth_user_school_id())
-    AND auth_user_role() IN ('SUPER_ADMIN', 'SCHOOL_ADMIN')
+    AND auth_user_role() = 'school_admin'
   );
 
 -- Students: admin manages
 CREATE POLICY "Admin can manage students" ON students
   FOR ALL USING (
-    school_id = auth_user_school_id() AND auth_user_role() IN ('SUPER_ADMIN', 'SCHOOL_ADMIN')
+    school_id = auth_user_school_id() AND auth_user_role() = 'school_admin'
   );
 
 -- Student Class History: admin manages
 CREATE POLICY "Admin can manage student history" ON student_class_history
   FOR ALL USING (
     EXISTS (SELECT 1 FROM students WHERE students.id = student_class_history.student_id AND students.school_id = auth_user_school_id())
-    AND auth_user_role() IN ('SUPER_ADMIN', 'SCHOOL_ADMIN')
+    AND auth_user_role() = 'school_admin'
   );
 
 -- Guardians: admin manages
 CREATE POLICY "Admin can manage guardians" ON guardians
   FOR ALL USING (
-    school_id = auth_user_school_id() AND auth_user_role() IN ('SUPER_ADMIN', 'SCHOOL_ADMIN')
+    school_id = auth_user_school_id() AND auth_user_role() = 'school_admin'
   );
 
 -- Student Guardians: admin manages
 CREATE POLICY "Admin can manage student guardians" ON student_guardians
   FOR ALL USING (
     EXISTS (SELECT 1 FROM students WHERE students.id = student_guardians.student_id AND students.school_id = auth_user_school_id())
-    AND auth_user_role() IN ('SUPER_ADMIN', 'SCHOOL_ADMIN')
+    AND auth_user_role() = 'school_admin'
   );
 
 -- Assessment Types: admin manages
 CREATE POLICY "Admin can manage assessment types" ON assessment_types
   FOR ALL USING (
-    school_id = auth_user_school_id() AND auth_user_role() IN ('SUPER_ADMIN', 'SCHOOL_ADMIN')
+    school_id = auth_user_school_id() AND auth_user_role() = 'school_admin'
   );
 
 -- Assessments: admin and teachers can manage
 CREATE POLICY "Staff can manage assessments" ON assessments
   FOR ALL USING (
     EXISTS (SELECT 1 FROM terms WHERE terms.id = assessments.term_id AND terms.school_id = auth_user_school_id())
-    AND auth_user_role() IN ('SUPER_ADMIN', 'SCHOOL_ADMIN', 'CLASS_TEACHER', 'SUBJECT_TEACHER')
+    AND auth_user_role() IN ('school_admin', 'class_teacher', 'subject_teacher')
   );
 
 -- Grades: teachers can insert/update grades
 CREATE POLICY "Teachers can manage grades" ON grades
   FOR ALL USING (
     EXISTS (SELECT 1 FROM students WHERE students.id = grades.student_id AND students.school_id = auth_user_school_id())
-    AND auth_user_role() IN ('SUPER_ADMIN', 'SCHOOL_ADMIN', 'CLASS_TEACHER', 'SUBJECT_TEACHER')
+    AND auth_user_role() IN ('school_admin', 'class_teacher', 'subject_teacher')
   );
 
 -- Attendance: class teachers can insert/update
 CREATE POLICY "Teachers can manage attendance" ON attendance
   FOR ALL USING (
     EXISTS (SELECT 1 FROM students WHERE students.id = attendance.student_id AND students.school_id = auth_user_school_id())
-    AND auth_user_role() IN ('SUPER_ADMIN', 'SCHOOL_ADMIN', 'CLASS_TEACHER')
+    AND auth_user_role() IN ('school_admin', 'class_teacher')
   );
 
 -- Fee Types: admin and bursar manage
 CREATE POLICY "Admin/bursar can manage fee types" ON fee_types
   FOR ALL USING (
-    school_id = auth_user_school_id() AND auth_user_role() IN ('SUPER_ADMIN', 'SCHOOL_ADMIN', 'BURSAR')
+    school_id = auth_user_school_id() AND auth_user_role() IN ('school_admin', 'bursar')
   );
 
 -- Fee Assignments: admin and bursar manage
 CREATE POLICY "Admin/bursar can manage fee assignments" ON fee_assignments
   FOR ALL USING (
     EXISTS (SELECT 1 FROM classes WHERE classes.id = fee_assignments.class_id AND classes.school_id = auth_user_school_id())
-    AND auth_user_role() IN ('SUPER_ADMIN', 'SCHOOL_ADMIN', 'BURSAR')
+    AND auth_user_role() IN ('school_admin', 'bursar')
   );
 
 -- Student Fees: admin and bursar manage
 CREATE POLICY "Admin/bursar can manage student fees" ON student_fees
   FOR ALL USING (
     EXISTS (SELECT 1 FROM students WHERE students.id = student_fees.student_id AND students.school_id = auth_user_school_id())
-    AND auth_user_role() IN ('SUPER_ADMIN', 'SCHOOL_ADMIN', 'BURSAR')
+    AND auth_user_role() IN ('school_admin', 'bursar')
   );
 
 -- Fee Payments: admin and bursar can insert
 CREATE POLICY "Admin/bursar can manage fee payments" ON fee_payments
   FOR ALL USING (
     EXISTS (SELECT 1 FROM students WHERE students.id = fee_payments.student_id AND students.school_id = auth_user_school_id())
-    AND auth_user_role() IN ('SUPER_ADMIN', 'SCHOOL_ADMIN', 'BURSAR')
+    AND auth_user_role() IN ('school_admin', 'bursar')
   );
 
 -- Announcements: admin can manage
 CREATE POLICY "Admin can manage announcements" ON announcements
   FOR ALL USING (
-    school_id = auth_user_school_id() AND auth_user_role() IN ('SUPER_ADMIN', 'SCHOOL_ADMIN', 'CLASS_TEACHER')
+    school_id = auth_user_school_id() AND auth_user_role() IN ('school_admin', 'class_teacher')
   );
 
 -- Notification Logs: admin can manage
 CREATE POLICY "Admin can manage notification logs" ON notification_logs
   FOR ALL USING (
-    school_id = auth_user_school_id() AND auth_user_role() IN ('SUPER_ADMIN', 'SCHOOL_ADMIN', 'BURSAR')
+    school_id = auth_user_school_id() AND auth_user_role() IN ('school_admin', 'bursar')
   );
+
+-- ==========================================
+-- ADMISSION APPLICATIONS (public submissions)
+-- ==========================================
+
+CREATE TABLE IF NOT EXISTS admission_applications (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  student_full_name TEXT NOT NULL,
+  date_of_birth DATE NOT NULL,
+  gender TEXT NOT NULL,
+  class_applied_for UUID REFERENCES classes(id),
+  class_applied_name TEXT,
+  previous_school TEXT,
+  parent_full_name TEXT NOT NULL,
+  parent_relationship TEXT NOT NULL,
+  parent_phone TEXT NOT NULL,
+  parent_whatsapp TEXT,
+  parent_email TEXT,
+  home_address TEXT NOT NULL,
+  how_heard TEXT,
+  medical_notes TEXT,
+  status TEXT NOT NULL DEFAULT 'pending'
+    CHECK (status IN ('pending', 'approved', 'rejected', 'info_requested')),
+  admin_notes TEXT,
+  applied_at TIMESTAMPTZ DEFAULT NOW(),
+  reviewed_at TIMESTAMPTZ,
+  reviewed_by UUID REFERENCES profiles(id),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Enable RLS
+ALTER TABLE admission_applications ENABLE ROW LEVEL SECURITY;
+
+-- School admin can see all applications
+CREATE POLICY "school_admin_all_applications" 
+ON admission_applications
+FOR ALL
+TO authenticated
+USING (true);
+
+-- Public can INSERT (to submit applications)
+CREATE POLICY "public_can_apply"
+ON admission_applications
+FOR INSERT
+TO anon
+WITH CHECK (true);

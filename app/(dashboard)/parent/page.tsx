@@ -69,20 +69,24 @@ export default async function ParentPage() {
                 <div className="grid grid-cols-2 divide-x divide-y">
                   <Link href={`/parent/grades/${child.id}`} className="p-4 hover:bg-slate-50 flex flex-col items-center gap-2 text-center">
                     <BookOpen className="h-5 w-5 text-blue-600" />
-                    <span className="text-sm font-medium text-slate-700">Latest Grades</span>
+                    <span className="text-sm font-medium text-slate-700">Grades</span>
                   </Link>
                   <Link href={`/parent/attendance/${child.id}`} className="p-4 hover:bg-slate-50 flex flex-col items-center gap-2 text-center">
                     <ClipboardList className="h-5 w-5 text-green-600" />
                     <span className="text-sm font-medium text-slate-700">Attendance</span>
                   </Link>
-                  <Link href={`/parent/fees/${child.id}`} className="p-4 hover:bg-slate-50 flex flex-col items-center gap-2 text-center">
-                    <Receipt className="h-5 w-5 text-amber-600" />
-                    <span className="text-sm font-medium text-slate-700">Fee Balance</span>
+                  <Link href="/parent/assignments" className="p-4 hover:bg-slate-50 flex flex-col items-center gap-2 text-center relative">
+                    <div className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></div>
+                    <BookOpen className="h-5 w-5 text-indigo-600" />
+                    <span className="text-sm font-medium text-slate-700">Homework</span>
                   </Link>
-                  <div className="p-4 bg-slate-50/50 flex flex-col items-center gap-2 text-center">
-                    <Bell className="h-5 w-5 text-slate-400" />
-                    <span className="text-sm font-medium text-slate-400 font-italic">Reports Coming Soon</span>
-                  </div>
+                  <Link href="/parent/behaviour" className="p-4 hover:bg-slate-50 flex flex-col items-center gap-2 text-center">
+                    <Bell className="h-5 w-5 text-red-600" />
+                    <span className="text-sm font-medium text-slate-700">Behaviour</span>
+                  </Link>
+                  <Link href="/parent/timetable" className="p-4 hover:bg-slate-50 flex flex-col items-center gap-2 text-center col-span-2">
+                    <span className="text-sm font-medium text-slate-700">📅 Tomorrow&apos;s Timetable</span>
+                  </Link>
                 </div>
               </div>
             );

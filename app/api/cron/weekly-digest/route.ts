@@ -12,7 +12,11 @@ export async function GET(req: Request) {
   const supabase = createAdminClient() as any;
   
   // Logic for Sunday evening digest
-  // ... implementation ...
+  // 1. Fetch upcoming events for next week
+  // 2. Fetch pending homework for each student
+  // 3. Fetch library books due next week
+  // 4. Send aggregated WhatsApp/Email to parents
+
 
   return NextResponse.json({ success: true, sent: 0 });
 }

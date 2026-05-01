@@ -81,11 +81,29 @@ export default async function AdminDashboardPage() {
           icon={<Users className="h-5 w-5 text-blue-600" />}
         />
         <StatCard 
-          title="Today's Attendance" 
-          value="92%" 
-          trend="down"
-          trendValue="2%"
-          icon={<CheckCircle2 className="h-5 w-5 text-green-600" />}
+          title="Homework Today" 
+          value="12" 
+          icon={<CheckCircle2 className="h-5 w-5 text-indigo-600" />}
+        />
+        <StatCard 
+          title="Behaviour Incidents" 
+          value="4" 
+          trend="up"
+          trendValue="this week"
+          icon={<AlertTriangle className="h-5 w-5 text-red-600" />}
+        />
+        <StatCard 
+          title="Library Overdue" 
+          value="8" 
+          icon={<Wallet className="h-5 w-5 text-amber-600" />}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <StatCard 
+          title="Upcoming Events" 
+          value="3" 
+          icon={<Users className="h-5 w-5 text-purple-600" />}
         />
         <StatCard 
           title="Fees Collected" 
@@ -152,17 +170,21 @@ export default async function AdminDashboardPage() {
           <div className="bg-white p-6 rounded-lg shadow-sm border">
             <h3 className="font-semibold text-lg mb-4 text-slate-800">Recent Activity</h3>
             <ul className="space-y-4">
+              <li className="text-sm border-l-2 border-red-500 pl-3">
+                <p className="font-medium text-slate-800">Behaviour: Fighting reported</p>
+                <p className="text-xs text-slate-500">20 minutes ago by Mr. Smith</p>
+              </li>
+              <li className="text-sm border-l-2 border-indigo-500 pl-3">
+                <p className="font-medium text-slate-800">New Homework: Mathematics Grade 10</p>
+                <p className="text-xs text-slate-500">1 hour ago by Mr. Smith</p>
+              </li>
               <li className="text-sm border-l-2 border-slate-200 pl-3">
-                <p className="font-medium text-slate-800">Attendance marked for Primary 4</p>
-                <p className="text-xs text-slate-500">10 minutes ago by Mr. Smith</p>
+                <p className="font-medium text-slate-800">Library: Things Fall Apart issued</p>
+                <p className="text-xs text-slate-500">3 hours ago by Librarian</p>
               </li>
               <li className="text-sm border-l-2 border-slate-200 pl-3">
                 <p className="font-medium text-slate-800">Fee payment received: GHS 500</p>
                 <p className="text-xs text-slate-500">1 hour ago by Bursar</p>
-              </li>
-              <li className="text-sm border-l-2 border-slate-200 pl-3">
-                <p className="font-medium text-slate-800">New student enrolled: John Doe</p>
-                <p className="text-xs text-slate-500">3 hours ago by Admin</p>
               </li>
             </ul>
           </div>

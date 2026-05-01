@@ -2,6 +2,8 @@ export const dynamic = 'force-dynamic';
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
+import Link from "next/link";
+
 export default async function StudentLayout({ children }: { children: React.ReactNode }) {
   const supabase = (await createClient()) as any;
   const { data: { user } } = await supabase.auth.getUser();
@@ -18,8 +20,32 @@ export default async function StudentLayout({ children }: { children: React.Reac
     redirect("/login");
   }
 
+  const navLinks = [
+    { href: "/student", label: "Dashboard" },
+    { href: "/student/assignments", label: "Assignments" },
+  ];
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
+      <header className="bg-primary-800 text-white shadow-sm h-16 flex items-center justify-between px-6 shrink-0">
+        <div className="flex items-center gap-8">
+          <h2 className="text-xl font-semibold whitespace-nowrap">Student Portal</h2>
+          <nav className="hidden md:flex items-center gap-4">
+            {navLinks.map(link => (
+              <Link 
+                key={link.href} 
+                href={link.href}
+                className="text-sm font-medium text-white/70 hover:text-white transition-colors"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
+        <form action="/auth/signout" method="post">
+          <button className="text-sm hover:underline">Logout</button>
+        </form>
+      </header>
       <main className="flex-1 p-6 max-w-7xl mx-auto w-full">
         {children}
       </main>

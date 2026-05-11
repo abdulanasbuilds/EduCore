@@ -1,56 +1,107 @@
-import React from "react";
+"use client";
 export const dynamic = 'force-dynamic';
 
-export default async function ParentTimetablePage() {
+import { useState, useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { Calendar } from "lucide-react";
+
+export default function ParentTimetablePage() {
+  const [entries, setEntries] = useState<any[]>([]);
+  const [slots, setSlots] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const supabase = createClient() as any;
+
+  const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+  useEffect(() => {
+    async function load() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setLoading(false); return; }
+
+      const { data: guardian } = await supabase.from("guardians").select("id").eq("user_id", user.id).limit(1).single();
+      if (!guardian?.id) { setLoading(false); return; }
+
+      const { data: sg } = await supabase
+        .from("student_guardians").select("student_id").eq("guardian_id", guardian.id).eq("is_primary", true).limit(1).single();
+      if (!sg?.student_id) { setLoading(false); return; }
+
+      const { data: classHistory } = await supabase
+        .from("student_class_history").select("class_id").eq("student_id", sg.student_id).eq("is_current", true).limit(1).single();
+      if (!classHistory?.class_id) { setLoading(false); return; }
+
+      const { data: currentYear } = await supabase
+        .from("academic_years").select("id").eq("is_current", true).limit(1).single();
+
+      const [{ data: entryData }, { data: slotData }] = await Promise.all([
+        supabase
+          .from("timetables")
+          .select("*, subjects(name), profiles(full_name), time_slots(start_time, end_time, period_number)")
+          .eq("class_id", classHistory.class_id)
+          .eq("academic_year_id", currentYear?.id)
+          .order("day_of_week"),
+        supabase.from("time_slots").select("*").order("period_number"),
+      ]);
+
+      setEntries(entryData || []);
+      setSlots(slotData || []);
+      setLoading(false);
+    }
+    load();
+  }, []);
+
+  const getEntry = (day: number, periodNum: number) =>
+    entries.find(e => e.day_of_week === day && e.time_slots?.period_number === periodNum);
+
+  if (loading) return <div className="p-6"><div className="h-64 bg-slate-100 rounded animate-pulse" /></div>;
+
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">Class Timetable</h1>
-      
-      {/* What to bring tomorrow */}
-      <div className="bg-amber-50 border border-amber-100 rounded-lg p-6 mb-8">
-        <h2 className="text-lg font-bold text-amber-900 mb-2">What to bring tomorrow</h2>
-        <p className="text-amber-800">
-          Remind your child to pack books for: <span className="font-semibold">Mathematics, English, Science, and History.</span>
-        </p>
+    <div className="p-6 space-y-4">
+      <div className="flex items-center gap-2">
+        <Calendar className="h-5 w-5 text-slate-400" />
+        <h1 className="text-2xl font-bold text-slate-900">Class Timetable</h1>
       </div>
 
-      <div className="bg-white p-6 rounded-lg shadow-sm">
-        <h3 className="text-lg font-semibold mb-4 text-slate-800">Weekly Schedule</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse border border-slate-200">
-            <thead>
-              <tr className="bg-slate-50">
-                <th className="border border-slate-200 p-2 text-left">Time</th>
-                <th className="border border-slate-200 p-2 text-center">Monday</th>
-                <th className="border border-slate-200 p-2 text-center">Tuesday</th>
-                <th className="border border-slate-200 p-2 text-center">Wednesday</th>
-                <th className="border border-slate-200 p-2 text-center">Thursday</th>
-                <th className="border border-slate-200 p-2 text-center">Friday</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td className="border border-slate-200 p-2 font-medium">08:00 - 09:00</td>
-                <td className="border border-slate-200 p-2 text-center">
-                  <div className="font-semibold">Science</div>
-                </td>
-                <td className="border border-slate-200 p-2 text-center">
-                  <div className="font-semibold">Mathematics</div>
-                </td>
-                <td className="border border-slate-200 p-2 text-center">
-                  <div className="font-semibold">English</div>
-                </td>
-                <td className="border border-slate-200 p-2 text-center">
-                  <div className="font-semibold">History</div>
-                </td>
-                <td className="border border-slate-200 p-2 text-center">
-                  <div className="font-semibold">PE</div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+      {slots.length === 0 ? (
+        <div className="bg-white p-6 rounded-lg shadow-sm text-center text-slate-500">
+          No timetable set up yet.
         </div>
-      </div>
+      ) : (
+        <div className="bg-white rounded-xl border overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="bg-slate-50">
+                  <th className="border border-slate-200 p-3 text-left text-sm font-medium text-slate-600 w-28">Time</th>
+                  {days.map(d => <th key={d} className="border border-slate-200 p-3 text-center text-sm font-medium text-slate-600">{d}</th>)}
+                </tr>
+              </thead>
+              <tbody>
+                {slots.map(slot => (
+                  <tr key={slot.id}>
+                    <td className="border border-slate-200 p-2 font-medium text-sm text-slate-600 bg-slate-50">
+                      <div className="text-xs font-bold text-slate-400">P{slot.period_number}</div>
+                      <div>{slot.start_time?.slice(0, 5)} - {slot.end_time?.slice(0, 5)}</div>
+                    </td>
+                    {days.map((d, idx) => {
+                      const entry = getEntry(idx + 1, slot.period_number);
+                      return (
+                        <td key={d} className="border border-slate-200 p-2 text-center min-h-[60px] bg-white">
+                          {entry ? (
+                            <div>
+                              <div className="font-medium text-slate-800 text-xs">{entry.subjects?.name}</div>
+                              {entry.profiles?.full_name && <div className="text-xs text-slate-400">{entry.profiles.full_name}</div>}
+                            </div>
+                          ) : null}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

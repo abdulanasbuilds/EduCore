@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { CheckCircle, XCircle, Clock, Eye, X } from "lucide-react";
+import { enrollFromApplicationAction } from "@/actions/enrollment-actions";
+import { CheckCircle, XCircle, Clock, Eye, X, UserPlus, Loader2 } from "lucide-react";
 
 type Application = {
   id: string;
@@ -11,6 +12,7 @@ type Application = {
   gender: string;
   previous_school: string | null;
   class_applied_for: string;
+  class_applied_for_id?: string;
   guardian_name: string;
   guardian_phone: string;
   guardian_email: string | null;
@@ -22,6 +24,8 @@ type Application = {
   created_at: string;
 };
 
+type Class = { id: string; name: string; level: number };
+
 export default function AdmissionsClient({
   applications: initialApplications,
 }: {
@@ -32,6 +36,17 @@ export default function AdmissionsClient({
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
   const [adminNotes, setAdminNotes] = useState("");
   const [updating, setUpdating] = useState(false);
+  const [enrolling, setEnrolling] = useState(false);
+  const [enrollResult, setEnrollResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [classes, setClasses] = useState<Class[]>([]);
+  const [selectedClassId, setSelectedClassId] = useState("");
+  const supabase = createClient() as any;
+
+  useEffect(() => {
+    supabase.from("classes").select("id, name, level").order("level").then(({ data }: any) => {
+      if (data) setClasses(data);
+    });
+  }, []);
 
   const filtered = filter === "all"
     ? applications
@@ -40,7 +55,6 @@ export default function AdmissionsClient({
   const handleUpdateStatus = async (id: string, status: "approved" | "rejected") => {
     setUpdating(true);
     try {
-      const supabase = createClient();
       const { error } = await supabase
         .from("admission_applications")
         .update({ status, admin_notes: adminNotes || null })
@@ -58,6 +72,42 @@ export default function AdmissionsClient({
     } finally {
       setUpdating(false);
     }
+  };
+
+  const handleEnroll = async () => {
+    if (!selectedApp || !selectedClassId) return;
+    setEnrolling(true);
+    setEnrollResult(null);
+
+    const today = new Date().toISOString().split("T")[0];
+    const result = await enrollFromApplicationAction({
+      admissionApplicationId: selectedApp.id,
+      studentName: selectedApp.student_name,
+      dateOfBirth: selectedApp.date_of_birth,
+      gender: selectedApp.gender as "Male" | "Female",
+      classId: selectedClassId,
+      enrollmentDate: today,
+      address: selectedApp.address || undefined,
+      guardianName: selectedApp.guardian_name,
+      guardianPhone: selectedApp.guardian_phone,
+      guardianEmail: selectedApp.guardian_email || undefined,
+      guardianRelationship: selectedApp.guardian_relationship,
+    });
+
+    setEnrollResult(result);
+    if (result.success) {
+      setApplications((prev) =>
+        prev.map((a) =>
+          a.id === selectedApp.id ? { ...a, status: "approved" as const } : a
+        )
+      );
+      setTimeout(() => {
+        setSelectedApp(null);
+        setEnrollResult(null);
+        setSelectedClassId("");
+      }, 2000);
+    }
+    setEnrolling(false);
   };
 
   const statusBadge = (status: string) => {
@@ -145,6 +195,8 @@ export default function AdmissionsClient({
                         onClick={() => {
                           setSelectedApp(app);
                           setAdminNotes(app.admin_notes || "");
+                          setSelectedClassId("");
+                          setEnrollResult(null);
                         }}
                         className="text-slate-400 hover:text-slate-700 transition-colors"
                       >
@@ -159,7 +211,6 @@ export default function AdmissionsClient({
         </div>
       )}
 
-      {/* Detail Modal */}
       {selectedApp && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-white rounded-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
@@ -248,24 +299,35 @@ export default function AdmissionsClient({
                 <>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                      Admin Notes <span className="text-slate-400">(optional)</span>
+                      Assign Class <span className="text-red-500">*</span>
                     </label>
-                    <textarea
-                      value={adminNotes}
-                      onChange={(e) => setAdminNotes(e.target.value)}
-                      rows={2}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent resize-none"
-                      placeholder="Reason for decision..."
-                    />
+                    <select
+                      value={selectedClassId}
+                      onChange={(e) => setSelectedClassId(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white"
+                      required
+                    >
+                      <option value="">Select class...</option>
+                      {classes.map((c) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
                   </div>
+
+                  {enrollResult && (
+                    <div className={`text-sm px-3 py-2 rounded-lg ${enrollResult.success ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
+                      {enrollResult.message}
+                    </div>
+                  )}
 
                   <div className="flex gap-3">
                     <button
-                      onClick={() => handleUpdateStatus(selectedApp.id, "approved")}
-                      disabled={updating}
-                      className="flex-1 bg-green-600 text-white py-2.5 rounded-lg font-medium text-sm hover:bg-green-700 transition-colors disabled:opacity-50"
+                      onClick={handleEnroll}
+                      disabled={!selectedClassId || enrolling}
+                      className="flex-1 bg-indigo-600 text-white py-2.5 rounded-lg font-medium text-sm hover:bg-indigo-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                     >
-                      {updating ? "Updating..." : "Approve"}
+                      {enrolling ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
+                      {enrolling ? "Enrolling..." : "Enroll Student"}
                     </button>
                     <button
                       onClick={() => handleUpdateStatus(selectedApp.id, "rejected")}

@@ -106,3 +106,41 @@ export function monthlyReport(
 ): string {
   return `Monthly summary for ${studentName}: Attendance: ${attendancePercent}%, Average Grade: ${averageGrade}, Fee Balance: ${feeBalance}. — View details on parent portal.`;
 }
+
+export function paymentReceipt({
+  schoolName,
+  parentName,
+  studentName,
+  amount,
+  paymentDate,
+  paymentMethod,
+  receiptNumber,
+  remainingBalance,
+}: {
+  schoolName: string;
+  parentName: string;
+  studentName: string;
+  amount: number;
+  paymentDate: string;
+  paymentMethod: string;
+  receiptNumber: string;
+  remainingBalance: number;
+}): string {
+  const formattedDate = new Date(paymentDate).toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+  return `[School Name] — Payment Receipt 🧾
+Dear [${parentName}],
+We confirm receipt of payment for [${studentName}].
+
+Amount Paid: GHS ${amount.toLocaleString()}
+Payment Date: ${formattedDate}
+Payment Method: ${paymentMethod}
+Receipt No: ${receiptNumber}
+Outstanding Balance: GHS ${remainingBalance.toLocaleString()}
+
+Thank you for your prompt payment.
+— ${schoolName}`.replace("[School Name]", schoolName);
+}

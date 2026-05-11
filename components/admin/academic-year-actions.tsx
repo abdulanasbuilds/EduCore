@@ -1,13 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus } from "lucide-react";
+import { Plus, RefreshCw } from "lucide-react";
 import { CreateAcademicYearModal } from "./academic-year-modal";
+import { RolloverYearModal } from "./rollover-year-modal";
 import { openTermAction, closeTermAction, setCurrentYearAction } from "@/actions/academic-actions";
 import { useRouter } from "next/navigation";
 
 export function AcademicYearActions() {
   const [isOpen, setIsOpen] = useState(false);
+  const [rolloverOpen, setRolloverOpen] = useState(false);
   const router = useRouter();
 
   // Handle events from server-rendered buttons
@@ -47,7 +49,7 @@ export function AcademicYearActions() {
 
   return (
     <>
-      <button 
+      <button
         onClick={() => setIsOpen(true)}
         className="bg-primary-800 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-primary-700 flex items-center gap-2 min-h-[44px]"
       >
@@ -55,7 +57,16 @@ export function AcademicYearActions() {
         Create New Year
       </button>
 
+      <button
+        onClick={() => setRolloverOpen(true)}
+        className="bg-emerald-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-emerald-700 flex items-center gap-2 min-h-[44px]"
+      >
+        <RefreshCw className="h-4 w-4" />
+        Rollover from Current
+      </button>
+
       <CreateAcademicYearModal isOpen={isOpen} onClose={() => setIsOpen(false)} />
+      <RolloverYearModal isOpen={rolloverOpen} onClose={() => setRolloverOpen(false)} />
     </>
   );
 }

@@ -2,7 +2,9 @@ export const dynamic = 'force-dynamic';
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { format } from "date-fns";
+import { MessageSquare } from "lucide-react";
 import { StudentExitModal } from "@/components/admin/student-exit-modal";
+import { QuickMessageParent } from "@/components/shared/quick-message-parent";
 
 export default async function StudentDetailPage({
   params,
@@ -107,11 +109,23 @@ export default async function StudentDetailPage({
           <div className="bg-white p-6 rounded-lg shadow-sm border">
             <h3 className="font-semibold text-lg mb-4 text-slate-800 border-b pb-2">Guardians</h3>
             <div className="space-y-4">
-              {guardians.map((guardian: { id: string; full_name: string; relationship: string; phone: string }) => (
-                <div key={guardian.id} className="text-sm">
-                  <p className="font-medium text-slate-800">{guardian.full_name}</p>
-                  <p className="text-slate-500 text-xs">{guardian.relationship}</p>
-                  <p className="mt-1">{guardian.phone}</p>
+              {guardians.map((guardian: { id: string; full_name: string; relationship: string; phone: string; whatsapp_number: string | null }) => (
+                <div key={guardian.id} className="flex items-start justify-between gap-3">
+                  <div className="text-sm">
+                    <p className="font-medium text-slate-800">{guardian.full_name}</p>
+                    <p className="text-slate-500 text-xs">{guardian.relationship}</p>
+                    <p className="mt-1">{guardian.phone}</p>
+                  </div>
+                  <QuickMessageParent
+                    guardian={guardian}
+                    studentName={student.full_name}
+                    trigger={
+                      <button className="flex items-center gap-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1.5 rounded font-medium transition-colors">
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        Message
+                      </button>
+                    }
+                  />
                 </div>
               ))}
             </div>

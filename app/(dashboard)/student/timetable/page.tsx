@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 
-export default function TeacherTimetablePage() {
+export default function StudentTimetablePage() {
   const [entries, setEntries] = useState<any[]>([]);
   const [slots, setSlots] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -15,13 +15,25 @@ export default function TeacherTimetablePage() {
   useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) { setLoading(false); return; }
+
+      const { data: profile } = await supabase
+        .from("profiles").select("student_id").eq("id", user.id).single();
+      if (!profile?.student_id) { setLoading(false); return; }
+
+      const { data: classHistory } = await supabase
+        .from("student_class_history").select("class_id").eq("student_id", profile.student_id).eq("is_current", true).limit(1).single();
+      if (!classHistory?.class_id) { setLoading(false); return; }
+
+      const { data: currentYear } = await supabase
+        .from("academic_years").select("id").eq("is_current", true).limit(1).single();
 
       const [{ data: entryData }, { data: slotData }] = await Promise.all([
         supabase
           .from("timetables")
-          .select("*, classes(name), subjects(name), profiles(full_name), time_slots(start_time, end_time, period_number)")
-          .eq("teacher_id", user.id)
+          .select("*, subjects(name), profiles(full_name), time_slots(start_time, end_time, period_number)")
+          .eq("class_id", classHistory.class_id)
+          .eq("academic_year_id", currentYear?.id)
           .order("day_of_week"),
         supabase.from("time_slots").select("*").order("period_number"),
       ]);
@@ -40,11 +52,11 @@ export default function TeacherTimetablePage() {
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">My Timetable</h1>
+      <h1 className="text-2xl font-bold mb-6">Class Timetable</h1>
 
-      {entries.length === 0 ? (
+      {slots.length === 0 ? (
         <div className="bg-white p-6 rounded-lg shadow-sm text-center text-slate-500">
-          No timetable assigned yet. Contact the school admin.
+          No timetable set up yet. Check back soon.
         </div>
       ) : (
         <div className="bg-white rounded-xl border overflow-hidden">
@@ -70,7 +82,7 @@ export default function TeacherTimetablePage() {
                           {entry ? (
                             <div>
                               <div className="font-medium text-slate-800 text-xs">{entry.subjects?.name}</div>
-                              <div className="text-xs text-slate-400">{entry.classes?.name}</div>
+                              {entry.profiles?.full_name && <div className="text-xs text-slate-400">{entry.profiles.full_name}</div>}
                             </div>
                           ) : null}
                         </td>

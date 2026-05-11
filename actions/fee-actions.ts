@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import type { ActionResponse } from "@/types";
 import { z } from "zod";
+import { sendPaymentReceiptNotification } from "@/lib/notifications/fee-notifications";
 
 const paymentSchema = z.object({
   studentFeeId: z.string().uuid(),
@@ -92,6 +93,24 @@ export async function recordPaymentAction(
     if (paymentError) {
       return { success: false, message: paymentError.message };
     }
+
+    const remainingBalance = studentFee.balance - data.amount;
+
+    const { data: student } = await supabase
+      .from("students")
+      .select("full_name")
+      .eq("id", data.studentId)
+      .single();
+
+    sendPaymentReceiptNotification({
+      studentId: data.studentId,
+      studentName: student?.full_name ?? "",
+      amount: data.amount,
+      paymentDate: data.paymentDate,
+      paymentMethod: data.paymentMethod,
+      receiptNumber,
+      remainingBalance,
+    }).catch((err) => console.error("Payment notification failed:", err));
 
     return {
       success: true,

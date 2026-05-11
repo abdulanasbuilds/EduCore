@@ -19,6 +19,14 @@
     {
       "path": "/api/cron/keep-alive",
       "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/daily-fee-report",
+      "schedule": "0 18 * * *"
+    },
+    {
+      "path": "/api/cron/weekly-fee-report",
+      "schedule": "0 19 * * 0"
     }
   ]
 }

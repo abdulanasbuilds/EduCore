@@ -187,6 +187,170 @@ export async function closeAcademicYearAction(yearId: string): Promise<ActionRes
   }
 }
 
+export async function rolloverYearAction(
+  sourceYearId: string,
+  newYearData: { name: string; startDate: string; endDate: string; terms: Array<{ name: string; termNumber: number; startDate: string; endDate: string; feeDueDate: string }> }
+): Promise<ActionResponse<{ yearId: string; classesCreated: number; subjectsCreated: number; promotionsDone: number }>> {
+  try {
+    const supabase = (await createClient()) as any;
+    if (!supabase) return { success: false, message: "Supabase not configured" };
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, message: "Unauthorized" };
+
+    const { data: profile } = await supabase
+      .from("profiles").select("school_id").eq("id", user.id).single() as any;
+    if (!profile?.school_id) return { success: false, message: "No school found" };
+
+    const { data: sourceYear } = await supabase
+      .from("academic_years").select("*").eq("id", sourceYearId).eq("school_id", profile.school_id).single() as any;
+    if (!sourceYear) return { success: false, message: "Source year not found" };
+
+    const { data: newYear, error: yearErr } = await supabase
+      .from("academic_years").insert({
+        school_id: profile.school_id,
+        name: newYearData.name,
+        start_date: newYearData.startDate,
+        end_date: newYearData.endDate,
+        is_current: false,
+        status: "active" as const,
+      } as any).select("id").single() as any;
+    if (yearErr || !newYear) return { success: false, message: yearErr?.message || "Failed to create year" };
+
+    for (const term of newYearData.terms) {
+      await supabase.from("terms").insert({
+        academic_year_id: newYear.id,
+        school_id: profile.school_id,
+        name: term.name,
+        term_number: term.termNumber,
+        start_date: term.startDate,
+        end_date: term.endDate,
+        fee_due_date: term.feeDueDate,
+        status: "upcoming" as const,
+      } as any);
+    }
+
+    const { data: sourceClasses } = await supabase
+      .from("classes").select("*").eq("school_id", profile.school_id);
+    let classesCreated = 0;
+    const classIdMap: Record<string, string> = {};
+    if (sourceClasses?.length) {
+      for (const cls of sourceClasses) {
+        const { data: newCls } = await supabase.from("classes").insert({
+          school_id: profile.school_id,
+          name: cls.name,
+          level: cls.level,
+          class_teacher_id: null,
+          capacity: cls.capacity,
+          description: cls.description,
+        } as any).select("id").single() as any;
+        if (newCls) {
+          classIdMap[cls.id] = newCls.id;
+          classesCreated++;
+        }
+      }
+    }
+
+    const { data: sourceSubjects } = await supabase
+      .from("subjects").select("id, name, code, type").eq("school_id", profile.school_id);
+    let subjectsCreated = 0;
+    const subjectIdMap: Record<string, string> = {};
+    if (sourceSubjects?.length) {
+      for (const sub of sourceSubjects) {
+        const { data: newSub } = await supabase.from("subjects").insert({
+          school_id: profile.school_id,
+          name: sub.name,
+          code: sub.code,
+          type: sub.type,
+        } as any).select("id").single() as any;
+        if (newSub) {
+          subjectIdMap[sub.id] = newSub.id;
+          subjectsCreated++;
+        }
+      }
+    }
+
+    if (Object.keys(classIdMap).length > 0 && Object.keys(subjectIdMap).length > 0) {
+      const { data: sourceAllocations } = await supabase
+        .from("class_subject_allocations")
+        .select("class_id, subject_id")
+        .in("class_id", Object.keys(classIdMap));
+
+      if (sourceAllocations?.length) {
+        const newAllocations = sourceAllocations
+          .filter((a: any) => classIdMap[a.class_id] && subjectIdMap[a.subject_id])
+          .map((a: any) => ({
+            class_id: classIdMap[a.class_id],
+            subject_id: subjectIdMap[a.subject_id],
+          }));
+        await supabase.from("class_subject_allocations").insert(newAllocations as any);
+      }
+    }
+
+    const { data: sourceTimetable } = await supabase
+      .from("timetable_entries")
+      .select("class_id, subject_id, teacher_id, day_of_week, period_number, room")
+      .in("class_id", Object.keys(classIdMap));
+
+    if (sourceTimetable?.length) {
+      const newEntries = sourceTimetable
+        .filter((t: any) => classIdMap[t.class_id] && subjectIdMap[t.subject_id])
+        .map((t: any) => ({
+          class_id: classIdMap[t.class_id],
+          subject_id: subjectIdMap[t.subject_id],
+          teacher_id: t.teacher_id,
+          day_of_week: t.day_of_week,
+          period_number: t.period_number,
+          room: t.room,
+          academic_year_id: newYear.id,
+        }));
+      await supabase.from("timetable_entries").insert(newEntries as any);
+    }
+
+    const { data: sourceFees } = await supabase
+      .from("fee_assignments").select("id, class_id, fee_type_id, amount, description")
+      .in("class_id", Object.keys(classIdMap));
+
+    const newYearTerms = await supabase.from("terms").select("id").eq("academic_year_id", newYear.id);
+    if (sourceFees?.length && newYearTerms.data?.length) {
+      for (const term of newYearTerms.data) {
+        const feeRecords = sourceFees
+          .filter((f: any) => classIdMap[f.class_id])
+          .map((f: any) => ({
+            class_id: classIdMap[f.class_id],
+            fee_type_id: f.fee_type_id,
+            term_id: term.id,
+            amount: f.amount,
+            description: f.description,
+          }));
+        await supabase.from("fee_assignments").insert(feeRecords as any);
+      }
+    }
+
+    const { data: sourceRules } = await supabase
+      .from("promotion_rules").select("class_id, min_avg_score, min_subject_score, require_all_subjects")
+      .eq("school_id", profile.school_id);
+
+    if (sourceRules?.length) {
+      const newRules = sourceRules.map((r: any) => ({
+        school_id: profile.school_id,
+        class_id: r.class_id ? classIdMap[r.class_id] : null,
+        min_avg_score: r.min_avg_score,
+        min_subject_score: r.min_subject_score,
+        require_all_subjects: r.require_all_subjects,
+      }));
+      await supabase.from("promotion_rules").upsert(newRules as any);
+    }
+
+    return {
+      success: true,
+      message: `New year created. ${classesCreated} classes, ${subjectsCreated} subjects copied from ${sourceYear.name}.`,
+      data: { yearId: newYear.id, classesCreated, subjectsCreated, promotionsDone: 0 },
+    };
+  } catch (err: any) {
+    return { success: false, message: err.message };
+  }
+}
+
 const promotionSchema = z.object({
   academicYearId: z.string().uuid(),
   decisions: z.array(

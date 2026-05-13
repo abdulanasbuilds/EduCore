@@ -28,7 +28,7 @@ export function CSVImportModal({ isOpen, onClose, classes }: CSVImportModalProps
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "educore_student_import_template.csv";
+    a.download = "student_import_template.csv";
     a.click();
     window.URL.revokeObjectURL(url);
   };

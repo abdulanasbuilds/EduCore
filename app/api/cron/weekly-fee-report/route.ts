@@ -104,7 +104,7 @@ ${studentsList}
 
 Term Total So Far: ${formatGhs(termTotal)}
 Students with Outstanding Balance: ${defaulters?.length ?? 0}
-— EduCore Auto-Report`;
+— Fee Report`;
 
   const adminWhatsApp = schoolConfig.whatsapp;
   if (adminWhatsApp) {

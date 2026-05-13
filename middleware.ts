@@ -56,7 +56,6 @@ export async function middleware(request: NextRequest) {
   const protectedRoutes = [
     { pattern: /^\/admin/, roles: ["school_admin"] },
     { pattern: /^\/teacher/, roles: ["class_teacher", "subject_teacher"] },
-    { pattern: /^\/subject-teacher/, roles: ["subject_teacher", "class_teacher"] },
     { pattern: /^\/bursar/, roles: ["bursar"] },
     { pattern: /^\/parent/, roles: ["parent"] },
     { pattern: /^\/student/, roles: ["student"] },
@@ -92,7 +91,7 @@ export async function middleware(request: NextRequest) {
       const roleMap: Record<string, string> = {
         school_admin: "/admin",
         class_teacher: "/teacher",
-        subject_teacher: "/subject-teacher",
+        subject_teacher: "/teacher",
         bursar: "/bursar",
         parent: "/parent",
         student: "/student",
@@ -120,7 +119,7 @@ export async function middleware(request: NextRequest) {
         const roleMap: Record<string, string> = {
           school_admin: "/admin",
           class_teacher: "/teacher",
-          subject_teacher: "/subject-teacher",
+          subject_teacher: "/teacher",
           bursar: "/bursar",
           parent: "/parent",
           student: "/student",

@@ -84,7 +84,7 @@ Students who paid:
 ${studentsList}
 
 Term Total So Far: ${formatGhs(termTotal)}
-— EduCore Auto-Report`;
+— School Fee Report`;
 
   const adminWhatsApp = schoolConfig.whatsapp;
   if (adminWhatsApp) {

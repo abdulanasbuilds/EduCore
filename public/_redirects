@@ -1,1 +1,5 @@
-/* /index.html 200
+# This file is only used by Cloudflare Pages
+# It is NOT used by Vercel or Netlify deployments
+# Next.js server routes handle routing in Vercel/Netlify
+# For Cloudflare: do NOT deploy this app on Cloudflare Pages
+# as it requires a Node.js server runtime

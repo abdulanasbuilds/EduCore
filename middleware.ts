@@ -16,12 +16,12 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Not configured yet — show setup page
+// Not configured yet — show setup page
   if (!supabaseUrl || !supabaseKey) {
     const publicPaths = ["/", "/setup", "/login", "/apply",
-                         "/register", "/forgot-password", 
-                         "/reset-password", "/api/health"]
-    const isPublic = publicPaths.some(p => 
+                         "/register", "/forgot-password",
+                         "/reset-password", "/api/health", "/demo"]
+    const isPublic = publicPaths.some(p =>
       path === p || path.startsWith(p)
     )
     if (!isPublic) {

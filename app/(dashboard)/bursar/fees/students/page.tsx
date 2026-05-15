@@ -14,7 +14,7 @@ export default async function BursarStudentsPage({
   const filterStatus = status || "all";
 
   const supabase = (await createClient()) as any;
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await (supabase.auth as any).getUser();
   const { data: profile } = await supabase.from("profiles").select("school_id").eq("id", user?.id).single();
 
   const { data: activeTerm } = await supabase

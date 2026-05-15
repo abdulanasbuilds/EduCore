@@ -1,9 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
-import { user_role } from '@/types'
+import { UserRole } from '@/types'
 
 type AuthResult = {
   userId: string
-  role: user_role
+  role: UserRole
   schoolId: string
 }
 
@@ -17,11 +17,11 @@ type AuthError = {
  * Returns an error object if not authenticated or role doesn't match.
  */
 export async function requireAuth(
-  allowedRoles?: user_role[]
+  allowedRoles?: UserRole[]
 ): Promise<AuthResult | AuthError> {
   const supabase = await createClient()
   
-  const { data: { user }, error } = await supabase.auth.getUser()
+  const { data: { user }, error } = await (supabase.auth as any).getUser()
   
   if (error || !user) {
     return { error: 'Authentication required.' }

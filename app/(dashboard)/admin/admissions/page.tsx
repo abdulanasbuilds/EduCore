@@ -5,7 +5,7 @@ import AdmissionsClient from "./admissions-client";
 
 export default async function AdmissionsPage() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await (supabase.auth as any).getUser();
 
   if (!user) redirect("/login");
 

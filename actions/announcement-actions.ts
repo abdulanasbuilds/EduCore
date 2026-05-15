@@ -176,160 +176,6 @@ export async function sendAnnouncementAction(
       return { success: false, message: "An unexpected error occurred" };
     }
   }
-   
-    try {
-      const parsed = announcementSchema.safeParse(formData);
-      if (!parsed.success) {
-        return { success: false, message: "Validation failed" };
-      }
-
-      const data = parsed.data;
-      const supabase = await createClient();
-    
-    // Verify the school_id matches the user's school for class/guardian operations
-    if (data.sendTo === "class" && data.classId) {
-      // Verify the class belongs to the user's school
-      const { data: classCheck, error: classError } = await supabase
-        .from("classes")
-        .select("id, school_id")
-        .eq("id", data.classId)
-        .single();
-      if (classError || !classCheck) {
-        return { success: false, message: 'Class not found.' };
-      }
-      if (classCheck.school_id !== auth.schoolId) {
-        return { success: false, message: 'Access denied.' };
-      }
-    } else if (data.sendTo === "individual" && data.guardianId) {
-      // Verify the guardian belongs to the user's school
-      const { data: guardianCheck, error: guardianError } = await supabase
-        .from("guardians")
-        .select("id, school_id")
-        .eq("id", data.guardianId)
-        .single();
-      if (guardianError || !guardianCheck) {
-        return { success: false, message: 'Guardian not found.' };
-      }
-      if (guardianCheck.school_id !== auth.schoolId) {
-        return { success: false, message: 'Access denied.' };
-      }
-    }
-
-    let guardians: any[] = [];
-
-    if (data.sendTo === "everyone") {
-      const { data: allGuardians } = await supabase
-        .from("guardians")
-        .select("id, full_name, phone, whatsapp_number, is_primary, student_id")
-        .eq("school_id", auth.schoolId)
-        .eq("is_primary", true);
-      guardians = allGuardians ?? [];
-    } else if (data.sendTo === "class") {
-      if (!data.classId) return { success: false, message: "Class is required" };
-      const { data: classStudents } = await supabase
-        .from("student_class_history")
-        .select("student_id")
-        .eq("class_id", data.classId)
-        .eq("is_current", true);
-      if (!classStudents) return { success: false, message: "No students found" };
-      const studentIds = classStudents.map((s: any) => s.student_id);
-      const { data: classGuardians } = await supabase
-        .from("guardians")
-        .select("id, full_name, phone, whatsapp_number, is_primary, student_id")
-        .in("student_id", studentIds)
-        .eq("is_primary", true);
-      guardians = classGuardians ?? [];
-    } else if (data.sendTo === "individual") {
-      if (!data.guardianId) return { success: false, message: "Guardian is required" };
-      const { data: singleGuardian, error: singleGuardianError } = await supabase
-        .from("guardians")
-        .select("id, full_name, phone, whatsapp_number, is_primary, student_id")
-        .eq("id", data.guardianId)
-        .eq("school_id", auth.schoolId)  // Important: scope to user's school
-        .single();
-      if (singleGuardianError || !singleGuardian) {
-        return { success: false, message: 'Guardian not found or access denied.' };
-      }
-      guardians = [singleGuardian];
-    }
-
-    if (guardians.length === 0) {
-      return { success: false, message: "No recipients found" };
-    }
-
-    const channels: string[] = [];
-    if (data.sendWhatsApp) channels.push("whatsapp");
-    if (data.sendSMS) channels.push("sms");
-
-    const target: string = data.sendTo === "everyone" ? "all" : data.sendTo === "class" ? "class" : "individual";
-    const { data: announcement } = await supabase
-      .from("announcements")
-      .insert({
-        school_id: auth.schoolId,
-        created_by: auth.userId,
-        title: data.title,
-        body: data.message,
-        target,
-        class_id: data.classId || null,
-        individual_guardian_id: data.guardianId || null,
-        channels,
-        recipient_count: guardians.length,
-        send_sms: data.sendSMS,
-        send_whatsapp: data.sendWhatsApp,
-      })
-      .select("id")
-      .single();
-
-    const fullMessage = `${schoolConfig.name}: ${data.message}`;
-    let sent = 0;
-    let failed = 0;
-
-    for (const guardian of guardians) {
-      const phone = guardian.whatsapp_number || guardian.phone;
-      if (!phone) { failed++; continue; }
-
-      for (const channel of channels) {
-        if (channel === "whatsapp") {
-          const result = await sendWhatsApp({
-            to: phone,
-            message: fullMessage,
-            recipientName: guardian.full_name,
-            type: "announcement",
-          });
-          if (result.success) sent++; else failed++;
-        } else if (channel === "sms") {
-          const result = await sendSMS({
-            to: phone,
-            message: fullMessage,
-            recipientName: guardian.full_name,
-            type: "announcement",
-          });
-          if (result.success) sent++; else failed++;
-        }
-      }
-
-      if (guardians.indexOf(guardian) < guardians.length - 1) {
-        await new Promise((resolve) => setTimeout(resolve, 100));
-      }
-    }
-
-    if (announcement) {
-      await supabase
-        .from("announcements")
-        .update({ delivered_count: sent, failed_count: failed })
-        .eq("id", announcement.id);
-    }
-
-    return {
-      success: true,
-      message: `Sent to ${sent} recipients. ${failed > 0 ? `${failed} failed.` : ""}`,
-      data: { sent, failed, total: guardians.length },
-    };
-    } catch (error) {
-      console.error("Error in sendAnnouncementAction:", error);
-      return { success: false, message: "An unexpected error occurred" };
-    }
-  }
 
 export async function sendQuickMessageAction(
    guardianId: string,
@@ -338,7 +184,7 @@ export async function sendQuickMessageAction(
 ): Promise<ActionResponse> {
    // STEP 1: Always verify authentication first
    const supabase = await createClient();
-   const { data: { user }, error: authError } = await supabase.auth.getUser();
+   const { data: { user }, error: authError } = await (supabase.auth as any).getUser();
    
    if (authError || !user) {
      return { success: false, message: 'Authentication required.' };
@@ -468,10 +314,10 @@ export async function getRecipientsCountAction(params: {
   return { count: 0 };
 }
 
-export async function searchGuardiansAction(query: string): Promise<{ guardians: any[] }> {
+export async function searchGuardiansAction(query: string): Promise<ActionResponse<{ guardians: any[] }>> {
    // STEP 1: Always verify authentication first
    const supabase = await createClient();
-   const { data: { user }, error: authError } = await supabase.auth.getUser();
+   const { data: { user }, error: authError } = await (supabase.auth as any).getUser();
    
    if (authError || !user) {
      return { success: false, message: 'Authentication required.' };
@@ -511,7 +357,7 @@ export async function searchGuardiansAction(query: string): Promise<{ guardians:
 
    // Verify the search is scoped to the user's school
    // (Note: We're using admin client but still scoping to school_id for defense in depth)
-   if (!query) return { guardians: [] };
+   if (!query) return { success: true, message: 'OK', data: { guardians: [] } };
 
    // Fix injection vulnerability: Use parameterized query instead of string interpolation
    // Build the OR condition properly using Supabase's or() method with proper parameterization
@@ -528,7 +374,7 @@ export async function searchGuardiansAction(query: string): Promise<{ guardians:
      .or(`full_name.ilike.${searchTerm},phone.ilike.${searchTerm}`)
      .limit(20);
 
-   return { guardians: guardians ?? [] };
+   return { success: true, message: 'Guardians found', data: { guardians: guardians ?? [] } };
  }
 
 export async function getAnnouncementHistoryAction(params?: {
@@ -537,7 +383,7 @@ export async function getAnnouncementHistoryAction(params?: {
   target?: string;
 }): Promise<{ announcements: any[] }> {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await (supabase.auth as any).getUser();
   if (!user) return { announcements: [] };
 
   const { data: profile } = await supabase

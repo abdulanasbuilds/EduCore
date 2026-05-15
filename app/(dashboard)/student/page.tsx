@@ -5,7 +5,7 @@ import { BookOpen, CalendarCheck, Star } from "lucide-react";
 
 export default async function StudentDashboardPage() {
   const supabase = (await createClient()) as any;
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await (supabase.auth as any).getUser();
   if (!user) return null;
 
   const { data: student } = await supabase

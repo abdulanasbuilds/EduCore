@@ -71,7 +71,7 @@ export default function StudentRegistrationPage() {
       return;
     }
 
-    const { error: authError } = await supabase.auth.signUp({
+    const { error: authError } = await (supabase.auth as any).signUp({
       email,
       password,
       options: {

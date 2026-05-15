@@ -71,15 +71,15 @@ export default function TeacherAnnouncementsPage() {
   useEffect(() => {
     if (!searchQuery || sendTo !== "individual") return;
     const timer = setTimeout(async () => {
-      const { guardians } = await searchGuardiansAction(searchQuery);
-      setSearchResults(guardians);
+      const result = await searchGuardiansAction(searchQuery);
+      setSearchResults(result.success ? result.data?.guardians || [] : []);
     }, 300);
     return () => clearTimeout(timer);
   }, [searchQuery, sendTo]);
 
   useEffect(() => {
     async function fetchMyClass() {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await (supabase.auth as any).getUser();
       if (!user) return;
       const { data: cls } = await supabase.from("classes").select("id").eq("class_teacher_id", user.id).limit(1).single();
       if (cls) setClassId(cls.id);

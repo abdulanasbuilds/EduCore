@@ -82,7 +82,7 @@ export async function createAcademicYearAction(
 export async function setCurrentYearAction(yearId: string): Promise<ActionResponse> {
    // STEP 1: Always verify authentication first
    const supabase = await createClient();
-   const { data: { user }, error: authError } = await supabase.auth.getUser();
+   const { data: { user }, error: authError } = await (supabase.auth as any).getUser();
    
    if (authError || !user) {
      return { success: false, message: 'Authentication required.' };
@@ -152,7 +152,7 @@ export async function setCurrentYearAction(yearId: string): Promise<ActionRespon
 export async function closeTermAction(termId: string): Promise<ActionResponse> {
    // STEP 1: Always verify authentication first
    const supabase = await createClient();
-   const { data: { user }, error: authError } = await supabase.auth.getUser();
+   const { data: { user }, error: authError } = await (supabase.auth as any).getUser();
    
    if (authError || !user) {
      return { success: false, message: 'Authentication required.' };
@@ -218,7 +218,7 @@ export async function closeTermAction(termId: string): Promise<ActionResponse> {
 export async function openTermAction(termId: string): Promise<ActionResponse> {
    // STEP 1: Always verify authentication first
    const supabase = await createClient();
-   const { data: { user }, error: authError } = await supabase.auth.getUser();
+   const { data: { user }, error: authError } = await (supabase.auth as any).getUser();
    
    if (authError || !user) {
      return { success: false, message: 'Authentication required.' };
@@ -291,7 +291,7 @@ export async function openTermAction(termId: string): Promise<ActionResponse> {
 export async function closeAcademicYearAction(yearId: string): Promise<ActionResponse> {
    // STEP 1: Always verify authentication first
    const supabase = await createClient();
-   const { data: { user }, error: authError } = await supabase.auth.getUser();
+   const { data: { user }, error: authError } = await (supabase.auth as any).getUser();
    
    if (authError || !user) {
      return { success: false, message: 'Authentication required.' };
@@ -357,7 +357,7 @@ export async function rolloverYearAction(
 ): Promise<ActionResponse<{ yearId: string; classesCreated: number; subjectsCreated: number; promotionsDone: number }>> {
    // STEP 1: Always verify authentication first
    const supabase = await createClient();
-   const { data: { user }, error: authError } = await supabase.auth.getUser();
+   const { data: { user }, error: authError } = await (supabase.auth as any).getUser();
    
    if (authError || !user) {
      return { success: false, message: 'Authentication required.' };
@@ -564,7 +564,7 @@ export async function executePromotionsAction(
     const data = parsed.data;
     const supabase = (await createClient()) as any;
     if (!supabase) return { success: false, message: "Supabase not configured" };
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await (supabase.auth as any).getUser();
     if (!user) return { success: false, message: "Unauthorized" };
 
     const { data: profile } = await supabase

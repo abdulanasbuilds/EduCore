@@ -10,7 +10,7 @@ export default async function TeacherLayout({
   children: React.ReactNode;
 }) {
   const supabase = (await createClient()) as any;
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await (supabase.auth as any).getUser();
 
   if (!user) redirect("/login");
 

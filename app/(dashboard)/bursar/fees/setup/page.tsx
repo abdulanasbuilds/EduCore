@@ -6,7 +6,7 @@ import { FeeSetupClient } from "@/components/forms/fee-setup-client";
 
 export default async function FeeSetupPage() {
   const supabase = (await createClient()) as any;
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await (supabase.auth as any).getUser();
   const { data: profile } = await supabase.from("profiles").select("school_id").eq("id", user?.id).single();
 
   const { data: activeTerm } = await supabase

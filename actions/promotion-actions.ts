@@ -33,7 +33,7 @@ export async function savePromotionRulesAction(
  ): Promise<ActionResponse> {
     try {
       const supabase = await createClient();
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      const { data: { user }, error: authError } = await (supabase.auth as any).getUser();
       if (authError || !user) {
         return { success: false, message: "Authentication required" };
       }
@@ -81,7 +81,7 @@ export async function savePromotionRulesAction(
 export async function getPromotionRulesAction(): Promise<{ rules: any[] }> {
    try {
      const supabase = await createClient();
-     const { data: { user }, error: authError } = await supabase.auth.getUser();
+     const { data: { user }, error: authError } = await (supabase.auth as any).getUser();
      if (authError || !user) {
        return { rules: [] };
      }
@@ -112,7 +112,7 @@ export async function computeTermResultsAction(
 ): Promise<ActionResponse<{ computed: number }>> {
    // STEP 1: Always verify authentication first
    const supabase = await createClient()
-   const { data: { user }, error: authError } = await supabase.auth.getUser()
+   const { data: { user }, error: authError } = await (supabase.auth as any).getUser()
    
    if (authError || !user) {
      return { success: false, message: 'Authentication required.' }
@@ -142,6 +142,7 @@ export async function computeTermResultsAction(
      return { success: false, message: 'You do not have permission for this action.' }
    }
 
+   try {
    // STEP 4: NOW it is safe to use admin client for operations that need to bypass RLS
    const admin = createAdminClient() as any;
 
@@ -229,22 +230,22 @@ export async function computeTermResultsAction(
        computed_at: new Date().toISOString(),
      } as any, { onConflict: "student_id,term_id" });
 
-       computed++;
-     }
+      computed++;
+    }
 
-     return { success: true, message: `Results computed for ${computed} students`, data: { computed } };
-   } catch (err: any) {
-     console.error('Error in computeTermResultsAction:', err)
-     return { success: false, message: 'An unexpected error occurred' };
-   }
- }
+    return { success: true, message: `Results computed for ${computed} students`, data: { computed } };
+  } catch (err: any) {
+    console.error('Error in computeTermResultsAction:', err)
+    return { success: false, message: 'An unexpected error occurred' };
+  }
+}
 
 export async function computeYearResultsAction(
    academicYearId: string
 ): Promise<ActionResponse<{ computed: number }>> {
    // STEP 1: Always verify authentication first
    const supabase = await createClient()
-   const { data: { user }, error: authError } = await supabase.auth.getUser()
+   const { data: { user }, error: authError } = await (supabase.auth as any).getUser()
    
    if (authError || !user) {
      return { success: false, message: 'Authentication required.' }
@@ -274,13 +275,11 @@ export async function computeYearResultsAction(
      return { success: false, message: 'You do not have permission for this action.' }
    }
 
-// STEP 4: For these operations, we need to query data that might be protected by RLS
-// Since we're already authenticated and authorized, we can use the regular client
-// and rely on RLS policies combined with our explicit school_id checks for security
-const supabase = await createClient();
+   try {
+   const admin = createAdminClient() as any;
 
 // Verify the academic year belongs to the user's school
-const { data: year } = await supabase
+const { data: year } = await admin
   .from("academic_years").select("*, school_id").eq("id", academicYearId).single();
 if (!year) return { success: false, message: "Year not found" };
 
@@ -289,10 +288,10 @@ if (year.school_id !== profile.school_id) {
   return { success: false, message: 'Academic year does not belong to your school.' }
 }
 
-const { data: terms } = await supabase
+const { data: terms } = await admin
   .from("terms").select("id").eq("academic_year_id", academicYearId).order("term_number");
 
-const { data: termResults } = await supabase
+const { data: termResults } = await admin
   .from("term_results")
   .select("*")
   .eq("academic_year_id", academicYearId);
@@ -333,22 +332,22 @@ const { data: termResults } = await supabase
        computed_at: new Date().toISOString(),
      } as any, { onConflict: "student_id,academic_year_id" });
 
-       computed++;
-     }
+      computed++;
+    }
 
-     return { success: true, message: `Year results computed for ${computed} students`, data: { computed } };
-   } catch (err: any) {
-     console.error('Error in computeYearResultsAction:', err)
-     return { success: false, message: 'An unexpected error occurred' };
-   }
- }
+    return { success: true, message: `Year results computed for ${computed} students`, data: { computed } };
+  } catch (err: any) {
+    console.error('Error in computeYearResultsAction:', err)
+    return { success: false, message: 'An unexpected error occurred' };
+  }
+}
 
 export async function evaluatePromotionAction(
    academicYearId: string
 ): Promise<ActionResponse<{ evaluations: any[]; summary: any }>> {
    // STEP 1: Always verify authentication first
    const supabase = await createClient()
-   const { data: { user }, error: authError } = await supabase.auth.getUser()
+   const { data: { user }, error: authError } = await (supabase.auth as any).getUser()
    
    if (authError || !user) {
      return { success: false, message: 'Authentication required.' }
@@ -378,13 +377,11 @@ export async function evaluatePromotionAction(
      return { success: false, message: 'You do not have permission for this action.' }
    }
 
-// STEP 4: For these operations, we need to query data that might be protected by RLS
-// Since we're already authenticated and authorized, we can use the regular client
-// and rely on RLS policies combined with our explicit school_id checks for security
-const supabase = await createClient();
+   try {
+   const admin = createAdminClient() as any;
 
 // Verify the academic year belongs to the user's school
-const { data: school } = await supabase.from("schools").select("id").limit(1).single();
+const { data: school } = await admin.from("schools").select("id").limit(1).single();
 if (!school) return { success: false, message: "No school found" };
 
 // STEP 5: Always scope queries to school_id
@@ -392,24 +389,24 @@ if (school.id !== profile.school_id) {
   return { success: false, message: 'School does not belong to your account.' }
 }
 
-const { data: rules } = await supabase
+const { data: rules } = await admin
   .from("promotion_rules")
   .select("*")
   .eq("school_id", profile.school_id);
 
-const { data: yearResults } = await supabase
+const { data: yearResults } = await admin
   .from("year_results")
   .select("*, students(full_name, status), classes(name, level)")
   .eq("academic_year_id", academicYearId)
   .eq("passed", false);
 
-const { data: allPassed } = await supabase
+const { data: allPassed } = await admin
   .from("year_results")
   .select("*, students(full_name, status), classes(name, level)")
   .eq("academic_year_id", academicYearId)
   .eq("passed", true);
 
-const { data: classes } = await supabase
+const { data: classes } = await admin
   .from("classes")
   .select("id, name, level")
   .eq("school_id", profile.school_id)
@@ -480,11 +477,11 @@ const { data: classes } = await supabase
        evaluations,
        summary: { total: evaluations.length, eligible, blockedFees, failed, graduated },
      },
-   };
- } catch (err: any) {
+    };
+} catch (err: any) {
    console.error('Error in evaluatePromotionAction:', err)
    return { success: false, message: 'An unexpected error occurred' };
- }
+}
 }
 
 export async function executeBulkPromotionAction(
@@ -498,7 +495,7 @@ export async function executeBulkPromotionAction(
 ): Promise<ActionResponse<{ promoted: number; repeated: number; graduated: number; errors: string[] }>> {
     // STEP 1: Always verify authentication first
     const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const { data: { user }, error: authError } = await (supabase.auth as any).getUser();
     
     if (authError || !user) {
       return { success: false, message: 'Authentication required.' };
@@ -667,7 +664,7 @@ export async function executeBulkPromotionAction(
             .eq("student_id", decision.studentId)
             .eq("is_primary", true)
             .single();
-          const g = guardian?.guardians;
+          const g = (guardian?.guardians as any)?.[0];
           if (!g) continue;
           const parentName = g.full_name;
           const phone = g.whatsapp_number || g.phone;
@@ -711,7 +708,7 @@ export async function getYearEndDataAction(academicYearId: string): Promise<{
 }> {
   try {
     const supabase = (await createClient()) as any;
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await (supabase.auth as any).getUser();
     if (!user) return { students: [], classes: [], terms: [], yearResults: [], promotionAudits: [], rules: [] };
 
     const { data: profile } = await supabase

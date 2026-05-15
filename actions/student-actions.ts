@@ -192,7 +192,7 @@ export async function updateStudentAction(
   try {
     const supabase = await createClient();
     if (!supabase) return { success: false, message: "Supabase not configured" };
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await (supabase.auth as any).getUser();
     if (!user) return { success: false, message: "Unauthorized" };
 
     const { data: profile } = await supabase
@@ -225,7 +225,7 @@ export async function withdrawStudentAction(
   try {
     const supabase = await createClient();
     if (!supabase) return { success: false, message: "Supabase not configured" };
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await (supabase.auth as any).getUser();
     if (!user) return { success: false, message: "Unauthorized" };
 
     const { data: profile } = await supabase

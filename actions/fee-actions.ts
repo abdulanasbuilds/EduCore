@@ -26,7 +26,7 @@ export async function recordPaymentAction(
     const data = parsed.data;
     const supabase = await createClient();
     if (!supabase) return { success: false, message: "Supabase not configured" };
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await (supabase.auth as any).getUser();
     if (!user) return { success: false, message: "Unauthorized" };
 
     const { data: profile } = await supabase
@@ -149,7 +149,7 @@ export async function setupFeesAction(
     const data = parsed.data;
     const supabase = await createClient();
     if (!supabase) return { success: false, message: "Supabase not configured" };
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await (supabase.auth as any).getUser();
     if (!user) return { success: false, message: "Unauthorized" };
 
     const { data: profile } = await supabase
@@ -210,7 +210,7 @@ export async function createFeeTypeAction(
   try {
     const supabase = (await createClient()) as any;
     if (!supabase) return { success: false, message: "Supabase not configured" };
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await (supabase.auth as any).getUser();
     if (!user) return { success: false, message: "Unauthorized" };
 
     const { data: profile } = await supabase

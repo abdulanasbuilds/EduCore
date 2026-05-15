@@ -12,7 +12,7 @@ export default function ParentBehaviourPage() {
 
   useEffect(() => {
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await (supabase.auth as any).getUser();
       if (!user) return;
       const { data: guardian } = await supabase.from("guardians").select("student_id").eq("user_id", user.id).limit(1).single();
       if (!guardian) { setLoading(false); return; }

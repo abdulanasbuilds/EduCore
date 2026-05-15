@@ -14,7 +14,7 @@ export default function StudentTimetablePage() {
 
   useEffect(() => {
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await (supabase.auth as any).getUser();
       if (!user) { setLoading(false); return; }
 
       const { data: profile } = await supabase

@@ -8,7 +8,7 @@ import { AcademicYearActions } from "@/components/admin/academic-year-actions";
 
 export default async function AcademicYearPage() {
   const supabase = (await createClient()) as any;
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await (supabase.auth as any).getUser();
   const { data: profile } = await supabase.from("profiles").select("school_id").eq("id", user?.id).single();
 
   const { data: years } = await supabase

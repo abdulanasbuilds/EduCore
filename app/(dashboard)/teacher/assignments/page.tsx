@@ -11,7 +11,7 @@ export default function TeacherAssignmentsPage() {
 
   useEffect(() => {
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await (supabase.auth as any).getUser();
       if (!user) return;
       const { data } = await supabase
         .from("assignments")

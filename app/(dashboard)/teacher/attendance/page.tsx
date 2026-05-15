@@ -25,7 +25,7 @@ export default function AttendanceMarkingPage() {
   useEffect(() => {
     async function loadData() {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user } } = await (supabase.auth as any).getUser();
         if (!user) return;
 
         // Get teacher's class

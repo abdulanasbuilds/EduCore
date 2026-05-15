@@ -142,8 +142,8 @@ export default function AnnouncementsPage() {
   useEffect(() => {
     if (!searchQuery || sendTo !== "individual") return;
     const timer = setTimeout(async () => {
-      const { guardians } = await searchGuardiansAction(searchQuery);
-      setSearchResults(guardians);
+      const result = await searchGuardiansAction(searchQuery);
+      setSearchResults(result.success ? result.data?.guardians || [] : []);
     }, 300);
     return () => clearTimeout(timer);
   }, [searchQuery, sendTo]);

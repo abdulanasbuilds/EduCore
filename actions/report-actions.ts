@@ -11,7 +11,7 @@ export async function generateReportCardAction(
 ): Promise<{ success: boolean; buffer?: ArrayBuffer; error?: string }> {
   // STEP 1: Always verify authentication first
   const supabase = await createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  const { data: { user }, error: authError } = await (supabase.auth as any).getUser();
   
   if (authError || !user) {
     return { success: false, error: 'Authentication required.' };
@@ -122,7 +122,7 @@ export async function generateReportCardAction(
       const max = maxBySubject[subId] || 100;
       const pct = max > 0 ? Math.round((total / max) * 100) : 0;
       const grade = pct >= 90 ? "A+" : pct >= 80 ? "A" : pct >= 70 ? "B" : pct >= 60 ? "C" : pct >= 50 ? "D" : "F";
-      const subName = assessments?.find((a: any) => a.subject_id === subId)?.subjects?.name || "Unknown";
+      const subName = assessments?.find((a: any) => a.subject_id === subId)?.subjects?.[0]?.name || "Unknown";
       return { subject: subName, classwork: "—", exam: "—", total: `${pct}%`, grade };
     });
 
@@ -136,9 +136,9 @@ export async function generateReportCardAction(
         full_name: student.full_name,
         admission_number: student.admission_number,
       },
-      class_name: classHistory?.classes?.name || "—",
+      class_name: (classHistory?.classes as any)?.[0]?.name || "—",
       term_name: term.name,
-      academicYear: term.academic_years?.name || "",
+      academicYear: (term.academic_years as any)?.[0]?.name || "",
       grades: gradeRows,
     };
 
@@ -156,7 +156,7 @@ export async function generateTermSummaryAction(
 ): Promise<{ success: boolean; data?: any; error?: string }> {
   // STEP 1: Always verify authentication first
   const supabase = await createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  const { data: { user }, error: authError } = await (supabase.auth as any).getUser();
   
   if (authError || !user) {
     return { success: false, error: 'Authentication required.' };

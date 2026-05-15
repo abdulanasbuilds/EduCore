@@ -15,7 +15,7 @@ export default function ParentTimetablePage() {
 
   useEffect(() => {
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await (supabase.auth as any).getUser();
       if (!user) { setLoading(false); return; }
 
       const { data: guardian } = await supabase.from("guardians").select("id").eq("user_id", user.id).limit(1).single();

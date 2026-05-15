@@ -29,7 +29,7 @@ export async function enrollFromApplicationAction(
 ): Promise<ActionResponse<{ studentId: string; admissionNumber: string }>> {
    // STEP 1: Always verify authentication first
    const supabase = await createClient();
-   const { data: { user }, error: authError } = await supabase.auth.getUser();
+   const { data: { user }, error: authError } = await (supabase.auth as any).getUser();
    
    if (authError || !user) {
      return { success: false, message: 'Authentication required.' };
@@ -112,7 +112,6 @@ export async function enrollFromApplicationAction(
 
 // For creating student, we use regular client with RLS
       // We've already verified the user is authenticated and authorized (school_admin or bursar)
-      const supabase = await createClient();
       
       // Verify the student doesn't already exist with this admission number (defense in depth)
       const { data: existingStudentCheck } = await supabase

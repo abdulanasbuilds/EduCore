@@ -50,7 +50,7 @@ export async function middleware(request: NextRequest) {
   })
 
   // Always use getUser() — never getSession() server-side
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { user } } = await (supabase.auth as any).getUser()
 
   // Protected route patterns and allowed roles
   const protectedRoutes = [

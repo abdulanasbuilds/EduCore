@@ -43,7 +43,7 @@ export default function NewStudentPage() {
 
   useEffect(() => {
     async function loadClasses() {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await (supabase.auth as any).getUser();
       if (!user) return;
       const { data: profile } = await supabase.from("profiles").select("school_id").eq("id", user.id).single() as any;
       if (!profile) return;

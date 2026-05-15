@@ -76,7 +76,7 @@ export function CSVImportModal({ isOpen, onClose, classes }: CSVImportModalProps
     let successCount = 0;
     let failedCount = 0;
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await (supabase.auth as any).getUser();
     const { data: profile } = await supabase.from("profiles").select("school_id").eq("id", user?.id).single();
     
     // Get active term and year

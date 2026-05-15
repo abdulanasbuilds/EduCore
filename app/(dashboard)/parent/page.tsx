@@ -6,7 +6,7 @@ import Link from "next/link";
 
 export default async function ParentPage() {
   const supabase = (await createClient()) as any;
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await (supabase.auth as any).getUser();
 
   if (!user) redirect("/login");
 

@@ -5,7 +5,7 @@ import { Users, BookOpen, CalendarCheck, MessageSquare } from "lucide-react";
 
 export default async function TeacherDashboardPage() {
   const supabase = (await createClient()) as any;
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await (supabase.auth as any).getUser();
   const { data: profile } = await supabase
     .from("profiles")
     .select("school_id, full_name")

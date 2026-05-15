@@ -17,7 +17,7 @@ export async function createClassAction(
 ): Promise<ActionResponse<{ classId: string }>> {
    // STEP 1: Always verify authentication first
    const supabase = await createClient();
-   const { data: { user }, error: authError } = await supabase.auth.getUser();
+   const { data: { user }, error: authError } = await (supabase.auth as any).getUser();
    
    if (authError || !user) {
      return { success: false, message: 'Authentication required.' };
@@ -78,7 +78,7 @@ export async function updateClassAction(
 ): Promise<ActionResponse> {
    // STEP 1: Always verify authentication first
    const supabase = await createClient();
-   const { data: { user }, error: authError } = await supabase.auth.getUser();
+   const { data: { user }, error: authError } = await (supabase.auth as any).getUser();
    
    if (authError || !user) {
      return { success: false, message: 'Authentication required.' };
@@ -144,7 +144,7 @@ export async function updateClassAction(
 export async function deleteClassAction(classId: string): Promise<ActionResponse> {
   try {
     const supabase = (await createClient()) as any;
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await (supabase.auth as any).getUser();
     if (!user) return { success: false, message: "Unauthorized" };
 
     const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single() as any;
@@ -173,7 +173,7 @@ export async function createSubjectAction(
 
     const data = parsed.data;
     const supabase = (await createClient()) as any;
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await (supabase.auth as any).getUser();
     if (!user) return { success: false, message: "Unauthorized" };
 
     const { data: profile } = await supabase.from("profiles").select("school_id").eq("id", user.id).single() as any;
@@ -200,7 +200,7 @@ export async function allocateSubjectToClassAction(
 ): Promise<ActionResponse> {
   try {
     const supabase = (await createClient()) as any;
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await (supabase.auth as any).getUser();
     if (!user) return { success: false, message: "Unauthorized" };
 
     const { data: existing } = await supabase

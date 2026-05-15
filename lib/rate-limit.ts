@@ -1,6 +1,5 @@
 import { Ratelimit } from '@upstash/ratelimit'
 import { Redis } from '@upstash/redis'
-import { headers } from 'next/headers'
 import { env, features } from '@/lib/env'
 
 // Only create the client if Redis is configured
@@ -17,7 +16,7 @@ function getRateLimiter(
   
   return new Ratelimit({
     redis,
-    limiter: Ratelimit.slidingWindow(requests, window),
+    limiter: Ratelimit.slidingWindow(requests, window as any),
   })
 }
 
@@ -36,6 +35,7 @@ export async function isRateLimited(
   // (acceptable for small schools, configure before scaling)
   if (!limiter) return false
   
+  const { headers } = await import('next/headers')
   const headersList = await headers()
   const ip = 
     headersList.get('x-forwarded-for') || 

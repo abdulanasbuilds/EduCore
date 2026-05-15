@@ -30,7 +30,7 @@ export async function createAssessmentAction(
     const data = parsed.data;
     const supabase = await createClient();
     if (!supabase) return { success: false, message: "Supabase not configured" };
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await (supabase.auth as any).getUser();
     if (!user) return { success: false, message: "Unauthorized" };
 
     const { data: profile } = await supabase
@@ -96,7 +96,7 @@ export async function submitGradesAction(
     const data = parsed.data;
     const supabase = await createClient();
     if (!supabase) return { success: false, message: "Supabase not configured" };
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await (supabase.auth as any).getUser();
     if (!user) return { success: false, message: "Unauthorized" };
 
     const { data: profile } = await supabase
@@ -161,7 +161,7 @@ export async function publishAssessmentAction(
   try {
     const supabase = await createClient();
     if (!supabase) return { success: false, message: "Supabase not configured" };
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await (supabase.auth as any).getUser();
     if (!user) return { success: false, message: "Unauthorized" };
 
     const { data: profile } = await supabase
@@ -207,7 +207,7 @@ export async function publishAssessmentAction(
              .eq("student_id", studentId)
              .eq("is_primary", true)
              .single();
-           const g = guardian?.guardians;
+            const g = (guardian?.guardians as any)?.[0];
            if (!g?.phone) continue;
            const parentName = g.full_name || "Parent";
            const phone = g.whatsapp_number || g.phone;
@@ -239,7 +239,7 @@ export async function deleteAssessmentAction(
   try {
     const supabase = await createClient();
     if (!supabase) return { success: false, message: "Supabase not configured" };
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await (supabase.auth as any).getUser();
     if (!user) return { success: false, message: "Unauthorized" };
 
     const { data: profile } = await supabase

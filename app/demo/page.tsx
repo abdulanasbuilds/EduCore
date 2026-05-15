@@ -1,43 +1,14 @@
-"use client";
-
 export const dynamic = 'force-dynamic';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 
-const DemoPage = () => {
+export default function DemoPage() {
   const [checklist, setChecklist] = useState(Array(8).fill(false));
-  const [copyFeedback, setCopyFeedback] = useState<Record<number, boolean>>({});
-  const router = useRouter();
 
-  const toggleChecklist = (index: number) => {
-    setChecklist(prev => {
-      const newList = [...prev];
-      newList[index] = !newList[index];
-      return newList;
-    });
-  };
-
-  const copyToClipboard = async (text: string, type: 'email' | 'password', index: number) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopyFeedback(prev => ({
-        ...prev,
-        [index]: true
-      }));
-      // Reset feedback after 2 seconds
-      setTimeout(() => {
-        setCopyFeedback(prev => {
-          const newState = {...prev};
-          delete newState[index];
-          return newState;
-        });
-      }, 2000);
-      return true;
-    } catch (err) {
-      console.error('Failed to copy: ', err);
-      return false;
-    }
+  const handleCopy = async (text: string, setCopied: React.Dispatch<React.SetStateAction<boolean>>) => {
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const roles = [
@@ -48,8 +19,7 @@ const DemoPage = () => {
       description: 'See the full school dashboard — student records, fee collections, attendance overview, reports, and announcements.',
       email: 'headmaster@greenfield.demo',
       password: 'demo1234',
-      buttonColor: 'bg-[#1e3a5f] text-white',
-      buttonText: 'Login as Headmaster',
+      buttonColor: '#1e3a5f', // navy
     },
     {
       id: 2,
@@ -58,8 +28,7 @@ const DemoPage = () => {
       description: 'Mark daily attendance for your class, enter grades, and track how your students are performing each term.',
       email: 'teacher@greenfield.demo',
       password: 'demo1234',
-      buttonColor: 'bg-[#0369a1] text-white',
-      buttonText: 'Login as Teacher',
+      buttonColor: '#0369a1', // blue
     },
     {
       id: 3,
@@ -68,8 +37,7 @@ const DemoPage = () => {
       description: 'Record fee payments, see who has outstanding balances, generate receipts, and view the school\'s financial summary.',
       email: 'bursar@greenfield.demo',
       password: 'demo1234',
-      buttonColor: 'bg-[#15803d] text-white',
-      buttonText: 'Login as Bursar',
+      buttonColor: '#15803d', // green
     },
     {
       id: 4,
@@ -78,8 +46,7 @@ const DemoPage = () => {
       description: 'See exactly what parents experience — child\'s grades, attendance, fee balance, report cards, and school announcements.',
       email: 'parent@greenfield.demo',
       password: 'demo1234',
-      buttonColor: 'bg-[#7e22ce] text-white',
-      buttonText: 'Login as Parent',
+      buttonColor: '#7e22ce', // purple
     },
   ];
 
@@ -135,165 +102,173 @@ const DemoPage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-white text-gray-900">
-      {/* Section 1: Top Header */}
+    <div className="min-h-screen bg-gray-50">
+      {/* SECTION 1 — TOP HEADER */}
       <header className="bg-[#1e3a5f] text-white py-8">
-        <div className="max-w-7xl mx-auto px-4 text-center">
-          <span className="bg-[#16a34a] text-white px-3 py-1 rounded-full text-xs font-medium">
+        <div className="max-w-6xl mx-auto px-4 text-center">
+          <span className="bg-[#16a34a] text-white px-3 py-1 rounded-full text-sm font-medium inline-block mb-4">
             LIVE DEMO — Try Before You Buy
           </span>
-          <h1 className="mt-4 text-3xl font-bold">Greenfield Academy</h1>
-          <p className="mt-2 text-lg font-light">School Management System — Demo</p>
-          <div className="mt-4 bg-yellow-100 text-yellow-800 px-4 py-2 rounded-md">
+          <h1 className="text-4xl font-bold mb-2">Greenfield Academy</h1>
+          <p className="text-lg mb-6">School Management System — Demo</p>
+          <div className="bg-yellow-100 text-yellow-800 px-4 py-2 rounded-md text-sm">
             ⚠️ This is a demo environment with sample data only. No real student information. Data resets every Monday.
           </div>
         </div>
       </header>
 
-      {/* Section 2: Intro */}
+      {/* SECTION 2 — INTRO */}
       <section className="bg-white py-12">
-        <div className="max-w-7xl mx-auto px-4 text-center">
-          <h2 className="text-2xl font-bold mb-4">Experience the complete system</h2>
-          <p className="text-gray-600 max-w-xl mx-auto">
+        <div className="max-w-6xl mx-auto px-4 text-center">
+          <h2 className="text-3xl font-bold mb-4">Experience the complete system</h2>
+          <p className="text-gray-600 lg:w-2/3 mx-auto">
             Log in as any role below to explore exactly what headmasters, teachers, bursars, and parents will experience when your school goes digital.
           </p>
         </div>
       </section>
 
-      {/* Section 3: Role Cards */}
-      <section className="bg-gray-50 py-12">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="grid gap-6 md:grid-cols-2">
-            {roles.map((role) => (
-              <div key={role.id} className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
-                <div className="flex items-center justify-center mb-4">
-                  <span className="text-5xl">{role.icon}</span>
-                </div>
-                <h3 className="text-lg font-bold text-[#1e3a5f] mb-2">{role.title}</h3>
-                <p className="text-gray-600 mb-4 line-clamp-2">{role.description}</p>
-                <div className="space-y-3">
-                  <div className="flex items-center">
-                    <span className="font-medium text-gray-700">Email:</span>
-                    <span className="ml-2 flex items-center">
-                      <code className="bg-gray-100 px-2 py-1 rounded text-sm font-mono">{role.email}</code>
+      {/* SECTION 3 — ROLE CARDS */}
+      <section className="py-12">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {roles.map((role) => {
+              const [emailCopied, setEmailCopied] = useState(false);
+              const [passwordCopied, setPasswordCopied] = useState(false);
+              return (
+                <div key={role.id} className="border rounded-xl shadow-lg p-6 flex flex-col h-full">
+                  <div className="text-5xl mb-4">{role.icon}</div>
+                  <h3 className="text-2xl font-bold text-[#1e3a5f] mb-2">{role.title}</h3>
+                  <p className="text-gray-600 mb-6 flex-grow">{role.description}</p>
+                  <div className="flex flex-col space-y-3 mt-auto">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm font-mono text-gray-600 bg-gray-100 px-2 py-1 rounded">
+                        Email: {role.email}
+                      </span>
                       <button
-                        onClick={() => copyToClipboard(role.email, 'email', role.id)}
-                        className="ml-2 px-2 py-1 bg-gray-200 text-gray-600 text-xs rounded hover:bg-gray-300 transition"
+                        onClick={() => handleCopy(role.email, setEmailCopied)}
+                        className="text-xs bg-gray-200 px-2 py-1 rounded hover:bg-gray-300"
+                        disabled={emailCopied}
                       >
-                        {copyFeedback[role.id] ? 'Copied!' : 'Copy'}
+                        {emailCopied ? 'Copied!' : 'Copy'}
                       </button>
-                    </span>
-                  </div>
-                  <div className="flex items-center">
-                    <span className="font-medium text-gray-700">Password:</span>
-                    <span className="ml-2 flex items-center">
-                      <code className="bg-gray-100 px-2 py-1 rounded text-sm font-mono">{role.password}</code>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm font-mono text-gray-600 bg-gray-100 px-2 py-1 rounded">
+                        Password: {role.password}
+                      </span>
                       <button
-                        onClick={() => copyToClipboard(role.password, 'password', role.id)}
-                        className="ml-2 px-2 py-1 bg-gray-200 text-gray-600 text-xs rounded hover:bg-gray-300 transition"
+                        onClick={() => handleCopy(role.password, setPasswordCopied)}
+                        className="text-xs bg-gray-200 px-2 py-1 rounded hover:bg-gray-300"
+                        disabled={passwordCopied}
                       >
-                        {copyFeedback[role.id] ? 'Copied!' : 'Copy'}
+                        {passwordCopied ? 'Copied!' : 'Copy'}
                       </button>
-                    </span>
+                    </div>
+                    <a
+                      href={`/login?email=${role.email}`}
+                      className={`w-full bg-${role.buttonColor} text-white py-2 rounded-md hover:bg-${role.buttonColor}/90 transition-colors font-medium flex items-center justify-center gap-2`}
+                    >
+                      Login as {role.title.split(' / ')[0]}
+                    </div>
                   </div>
-                  <button
-                    onClick={() => {
-                      router.push(`/login?email=${role.email}`);
-                    }}
-                    className={`${role.buttonColor} w-full py-2 px-4 rounded-md font-medium hover:bg-[#1e3a5f]/90 transition`}
-                  >
-                    {role.buttonText}
-                  </button>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
 
-      {/* Section 4: Guided Tour */}
+      {/* SECTION 4 — GUIDED TOUR */}
       <section className="bg-gray-50 py-12">
-        <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-2xl font-bold mb-6 text-center">What to try in 10 minutes</h2>
-          <p className="text-gray-600 mb-8 text-center max-w-xl mx-auto">
+        <div className="max-w-6xl mx-auto px-4 text-center">
+          <h2 className="text-3xl font-bold mb-4">What to try in 10 minutes</h2>
+          <p className="text-gray-600 lg:w-2/3 mx-auto mb-8">
             Follow this guide to see the most powerful features
           </p>
-          <ol className="space-y-6">
-            {steps.map((step) => (
-              <li
-                key={step.id}
-                className="flex items-start space-x-4 p-4 bg-white rounded-lg shadow-sm border border-gray-200"
-              >
-                <div className="flex-shrink-0 flex items-center justify-center w-10 h-10 bg-[#1e3a5f] text-white rounded-full text-sm font-medium mt-0.5">
-                  {step.id}
-                </div>
-                <div className="flex-1 space-y-2">
-                  <div className="flex items-start space-x-3">
-                    <input
-                      type="checkbox"
-                      id={`step-${step.id}`}
-                      checked={checklist[step.id - 1]}
-                      onChange={() => toggleChecklist(step.id - 1)}
-                      className="h-4 w-4 text-[#1e3a5f] focus:ring-primary border-gray-300 rounded"
-                    />
-                    <div className="space-y-1">
-                      <h3 className="font-semibold text-gray-900">{step.title}</h3>
-                      <p className="text-gray-600 text-sm">{step.description}</p>
+          <div className="space-y-4">
+            {steps.map((step) => {
+              const [checked, setChecked] = useState(checklist[step.id - 1]);
+              const handleToggle = () => {
+                setChecklist((prev) => {
+                  const newList = [...prev];
+                  newList[step.id - 1] = !checked;
+                  return newList;
+                });
+                setChecked(!checked);
+              };
+              return (
+                <div key={step.id} className="flex items-start space-x-4 text-left">
+                  <div className="flex-shrink-0 mt-1 flex h-5 w-5 items-center justify-center bg-[#1e3a5f] text-white rounded-full text-xs font-bold">
+                    {step.id}
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <div className="flex items-start space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={handleToggle}
+                        className="h-4 w-4 text-[#1e3a5f] focus:ring-primary border-gray-300 rounded"
+                      />
+                      <div className="space-y-0.5">
+                        <h3 className="font-semibold text-[#1e3a5f]">{step.title}</h3>
+                        <p className="text-gray-600 text-sm">{step.description}</p>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </li>
-            ))}
-          </ol>
+              );
+            })}
+          </div>
         </div>
       </section>
 
-      {/* Section 5: CTA */}
+      {/* SECTION 5 — CTA */}
       <section className="bg-[#1e3a5f] text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 text-center">
-          <h2 className="text-2xl font-bold mb-4">Ready to get this for your school?</h2>
-           <p className="text-gray-200 mb-8 max-w-xl mx-auto">
-             I&#39;ll set it up with your school&#39;s name, logo, and your real student data in under 90 minutes.
-           </p>
-          <div className="flex flex-col gap-4 md:flex-row md:justify-center">
+        <div className="max-w-6xl mx-auto px-4 text-center">
+          <h2 className="text-3xl font-bold mb-4">Ready to get this for your school?</h2>
+          <p className="text-gray-200 lg:w-2/3 mx-auto mb-8">
+            I'll set it up with your school's name, logo, and your real student data in under 90 minutes.
+          </p>
+          <div className="flex flex-col md:flex-row md:justify-center gap-4 mb-8">
             <a
-              href="https://wa.me/233XXXXXXXXX"
-              className="flex items-center justify-center px-6 py-3 bg-[#16a34a] text-white rounded-md font-medium hover:bg-[#15803d] transition"
+              href="https://wa.me/233244555666"
+              className="flex-1 bg-[#16a34a] text-white py-3 rounded-md hover:bg-[#16a34a]/90 transition-colors font-medium flex items-center justify-center gap-2"
             >
               💬 WhatsApp Me Now
             </a>
             <a
               href="mailto:your@email.com"
-              className="flex items-center justify-center px-6 py-3 border border-white text-white rounded-md font-medium hover:bg-white/10 transition"
+              className="flex-1 border border-white hover:bg-white/10 py-3 rounded-md flex items-center justify-center gap-2 transition-colors"
             >
               📧 Send an Email
             </a>
           </div>
-          <div className="mt-8 flex flex-col gap-4 md:flex-row md:justify-center text-gray-200">
-             <div className="flex items-center space-x-2">
-               <span className="text-2xl">✅</span>
-               <span>One-time payment — no monthly fees</span>
-             </div>
-             <div className="flex items-center space-x-2">
-               <span className="text-2xl">🔒</span>
-               <span>Your school&#39;s private database</span>
-             </div>
-             <div className="flex items-center space-x-2">
-               <span className="text-2xl">⚡</span>
-               <span>Setup in under 90 minutes</span>
-             </div>
+          <div className="flex flex-col md:flex-row md:justify-center gap-6 text-gray-200 text-sm">
+            <div className="flex items-center space-x-2">
+              <span className="text-xl">✅</span>
+              <span>One-time payment — no monthly fees</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <span className="text-xl">🔒</span>
+              <span>Your school's private database</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <span className="text-xl">⚡</span>
+              <span>Setup in under 90 minutes</span>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-gray-50 py-6 text-center text-gray-500 text-sm">
-        <div className="max-w-7xl mx-auto px-4">
-          Demo by Abdul Anas &middot; <a href="https://twitter.com/abdulanasbuilds" className="text-gray-600 hover:underline">@abdulanasbuilds</a>
-        </div>
+      {/* FOOTER */}
+      <footer className="bg-white py-6 text-center text-gray-500">
+        <p>
+          Demo by Abdul Anas ·{' '}
+          <a href="https://twitter.com/abdulanasbuilds" className="underline hover:text-gray-700">
+            @abdulanasbuilds
+          </a>
+        </p>
       </footer>
     </div>
   );
-};
-
-export default DemoPage;
+}

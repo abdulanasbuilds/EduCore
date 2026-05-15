@@ -56,7 +56,10 @@ export async function recordPaymentAction(
 
     // Generate receipt number
     const now = new Date();
-    const receiptNumber = `RCP-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}-${String(Math.floor(Math.random() * 10000)).padStart(4, "0")}`;
+    // Use crypto-secure random for receipt number
+    const { randomBytes } = await import('crypto');
+    const randomPart = randomBytes(2).toString('hex');
+    const receiptNumber = `RCP-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}-${randomPart.toUpperCase().padStart(4, "0")}`;
 
     // Use RPC to atomically update the fee balance to prevent race conditions
     const { error: rpcError } = await supabase.rpc("update_student_fee_payment", {

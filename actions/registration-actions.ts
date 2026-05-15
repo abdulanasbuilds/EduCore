@@ -1,18 +1,19 @@
 "use server";
 
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
+import { isRateLimited } from "@/lib/rate-limit";
 
 export async function verifyStudentForRegistration(admissionNumber: string, verificationData: { name?: string; dob?: string }) {
-  const adminDb = createAdminClient();
-  if (!adminDb) return { success: false, message: "System not configured." };
+  const supabase = await createClient();
+  if (!supabase) return { success: false, message: "System not configured." };
 
-  const { data: student } = await adminDb
+  const { data: student, error } = await supabase
     .from("students")
     .select("id, full_name, admission_number")
     .eq("admission_number", admissionNumber)
     .single();
 
-  if (!student) return { success: false, message: "Student not found." };
+  if (error || !student) return { success: false, message: "Student not found." };
 
   if (verificationData.name) {
     const match = student.full_name.toLowerCase().includes(verificationData.name.toLowerCase());
@@ -23,14 +24,36 @@ export async function verifyStudentForRegistration(admissionNumber: string, veri
 }
 
 export async function submitParentRegistration(data: any) {
+  // Rate limit: 5 attempts per minute per IP
+  const limited = await isRateLimited('parent-register', 5, '1 m');
+  if (limited) {
+    return { 
+      success: false,
+      message: 'Too many attempts. Please wait a minute and try again.' 
+    };
+  }
+  
+  const supabase = await createClient();
+  if (!supabase) return { success: false, message: "System not configured." };
+  
+  // TODO: Implement actual parent registration logic
   return { success: false, message: "Not yet implemented." };
 }
 
 export async function submitAdmissionApplication(data: any) {
-  const adminDb = createAdminClient();
-  if (!adminDb) return { success: false, message: "System not configured." };
+  // Rate limit: 3 applications per 10 minutes per IP
+  const limited = await isRateLimited('apply', 3, '10 m');
+  if (limited) {
+    return { 
+      success: false,
+      message: 'Too many submissions. Please wait before trying again.' 
+    };
+  }
   
-  const { error } = await adminDb
+  const supabase = await createClient();
+  if (!supabase) return { success: false, message: "System not configured." };
+  
+  const { error } = await supabase
     .from("admission_applications")
     .insert(data);
     

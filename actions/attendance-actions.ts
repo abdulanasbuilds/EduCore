@@ -80,31 +80,38 @@ export async function submitAttendanceAction(
     const absentCount = data.records.filter((r) => r.status === "Absent").length;
 
     if (absentCount > 0) {
-      const admin = createAdminClient() as any;
-      const { data: profile } = await admin.from("profiles").select("school_id").limit(1).single() as any;
+       // For notifications, we need to look up guardians. Since we're already authenticated,
+       // we can use the regular client with RLS for these lookups as they're scoped to the user's school
+       const supabaseForNotifications = await createClient();
+       
+       const { data: profile } = await supabaseForNotifications
+         .from("profiles")
+         .select("school_id")
+         .limit(1)
+         .single() as any;
 
-      const absentStudents = data.records.filter((r) => r.status === "Absent");
-      for (const student of absentStudents) {
-        const { data: guardian } = await admin
-          .from("student_guardians")
-          .select("guardians(full_name, phone, whatsapp_number)")
-          .eq("student_id", student.studentId)
-          .eq("is_primary", true)
-          .single();
+       const absentStudents = data.records.filter((r) => r.status === "Absent");
+       for (const student of absentStudents) {
+         const { data: guardian } = await supabaseForNotifications
+           .from("student_guardians")
+           .select("guardians(full_name, phone, whatsapp_number)")
+           .eq("student_id", student.studentId)
+           .eq("is_primary", true)
+           .single();
 
-        const g = guardian?.guardians;
-        if (!g?.phone) continue;
-        const parentName = g.full_name || "Parent";
-        const phone = g.whatsapp_number || g.phone;
-        const dateStr = new Date(data.date).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
-        const msg = absenceAlert(parentName, dateStr, schoolConfig.name, schoolConfig.phone);
+         const g = guardian?.guardians;
+         if (!g?.phone) continue;
+         const parentName = g.full_name || "Parent";
+         const phone = g.whatsapp_number || g.phone;
+         const dateStr = new Date(data.date).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+         const msg = absenceAlert(parentName, dateStr, schoolConfig.name, schoolConfig.phone);
 
-        sendWhatsApp({ to: phone, message: msg, recipientName: parentName, type: "absence" }).catch(() => {});
-        if (!features.smsEnabled) {
-          sendSMS({ to: phone, message: msg, recipientName: parentName, type: "absence" }).catch(() => {});
-        }
-      }
-    }
+         sendWhatsApp({ to: phone, message: msg, recipientName: parentName, type: "absence" }).catch(() => {});
+         if (!features.smsEnabled) {
+           sendSMS({ to: phone, message: msg, recipientName: parentName, type: "absence" }).catch(() => {});
+         }
+       }
+     }
 
     return {
       success: true,

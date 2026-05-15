@@ -184,45 +184,48 @@ export async function publishAssessmentAction(
 
     if (error) return { success: false, message: error.message };
 
-    const admin = createAdminClient() as any;
-    const { data: assessment } = await admin
-      .from("assessments")
-      .select("*, subjects(name), classes(name)")
-      .eq("id", assessmentId)
-      .single() as any;
+     // For publishing assessments, we need to look up related data for notifications
+     // We can use the regular client with RLS since we're already authenticated
+     const { data: assessment } = await supabase
+       .from("assessments")
+       .select("*, subjects(name), classes(name)")
+       .eq("id", assessmentId)
+       .single();
 
-    if (assessment) {
-      const { data: grades } = await admin
-        .from("grades")
-        .select("student_id")
-        .eq("assessment_id", assessmentId);
-      if (grades) {
-        const studentIds = [...new Set(grades.map((g: any) => g.student_id))];
-        for (const studentId of studentIds) {
-          const { data: student } = await admin.from("students").select("full_name, admission_number").eq("id", studentId).single() as any;
-          const { data: guardian } = await admin
-            .from("student_guardians")
-            .select("guardians(full_name, phone, whatsapp_number)")
-            .eq("student_id", studentId).eq("is_primary", true).single();
-          const g = guardian?.guardians;
-          if (!g?.phone) continue;
-          const parentName = g.full_name || "Parent";
-          const phone = g.whatsapp_number || g.phone;
-          const { data: grade } = await admin.from("grades").select("score").eq("assessment_id", assessmentId).eq("student_id", studentId).single() as any;
-          if (!grade?.score && grade?.score !== 0) continue;
-          const score = grade.score;
-          const max = assessment.max_score;
-          const pct = Math.round((score / max) * 100);
-          const gradeL = pct >= 90 ? "A+" : pct >= 80 ? "A" : pct >= 70 ? "B" : pct >= 60 ? "C" : pct >= 50 ? "D" : "F";
-          const portal = `${process.env.NEXT_PUBLIC_APP_URL}/parent/grades`;
-          const msg = gradePublished(parentName, student?.full_name || "", assessment.subjects?.name || "", score, max, gradeL, portal);
-          sendWhatsApp({ to: phone, message: msg, recipientName: parentName, type: "grade" }).catch(() => {});
-          if (!features.smsEnabled) {
-            sendSMS({ to: phone, message: msg, recipientName: parentName, type: "grade" }).catch(() => {});
-          }
-        }
-      }
-    }
+     if (assessment) {
+       const { data: grades } = await supabase
+         .from("grades")
+         .select("student_id")
+         .eq("assessment_id", assessmentId);
+       if (grades) {
+         const studentIds = [...new Set(grades.map((g: any) => g.student_id))];
+         for (const studentId of studentIds) {
+           const { data: student } = await supabase.from("students").select("full_name, admission_number").eq("id", studentId).single();
+           const { data: guardian } = await supabase
+             .from("student_guardians")
+             .select("guardians(full_name, phone, whatsapp_number)")
+             .eq("student_id", studentId)
+             .eq("is_primary", true)
+             .single();
+           const g = guardian?.guardians;
+           if (!g?.phone) continue;
+           const parentName = g.full_name || "Parent";
+           const phone = g.whatsapp_number || g.phone;
+           const { data: grade } = await supabase.from("grades").select("score").eq("assessment_id", assessmentId).eq("student_id", studentId).single();
+           if (!grade?.score && grade?.score !== 0) continue;
+           const score = grade.score;
+           const max = assessment.max_score;
+           const pct = Math.round((score / max) * 100);
+           const gradeL = pct >= 90 ? "A+" : pct >= 80 ? "A" : pct >= 70 ? "B" : pct >= 60 ? "C" : pct >= 50 ? "D" : "F";
+           const portal = `${process.env.NEXT_PUBLIC_APP_URL}/parent/grades`;
+           const msg = gradePublished(parentName, student?.full_name || "", assessment.subjects?.name || "", score, max, gradeL, portal);
+           sendWhatsApp({ to: phone, message: msg, recipientName: parentName, type: "grade" }).catch(() => {});
+           if (!features.smsEnabled) {
+             sendSMS({ to: phone, message: msg, recipientName: parentName, type: "grade" }).catch(() => {});
+           }
+         }
+       }
+     }
 
     return { success: true, message: "Assessment published. Parents notified." };
   } catch {

@@ -13,64 +13,133 @@ const classSchema = z.object({
 });
 
 export async function createClassAction(
-  formData: z.infer<typeof classSchema>
+   formData: z.infer<typeof classSchema>
 ): Promise<ActionResponse<{ classId: string }>> {
-  try {
-    const parsed = classSchema.safeParse(formData);
-    if (!parsed.success) return { success: false, message: "Validation failed" };
+   // STEP 1: Always verify authentication first
+   const supabase = await createClient();
+   const { data: { user }, error: authError } = await supabase.auth.getUser();
+   
+   if (authError || !user) {
+     return { success: false, message: 'Authentication required.' };
+   }
 
-    const data = parsed.data;
-    const supabase = (await createClient()) as any;
-    if (!supabase) return { success: false, message: "Supabase not configured" };
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { success: false, message: "Unauthorized" };
+   // STEP 2: Get user role and school_id from profiles
+   const { data: profile } = await supabase
+     .from('profiles')
+     .select('role, school_id, is_active')
+     .eq('id', user.id)
+     .single();
+   
+   if (!profile) {
+     return { success: false, message: 'Profile not found.' };
+   }
+   
+   if (!profile.is_active) {
+     return { success: false, message: 'Account is inactive.' };
+   }
+   
+   if (!profile.school_id) {
+     return { success: false, message: 'No school assigned to this account.' }
+   }
+   
+   // STEP 3: Check role permission - only school_admin can create classes
+   if (profile.role !== 'school_admin') {
+     return { success: false, message: 'You do not have permission for this action.' }
+   }
 
-    const { data: profile } = await supabase.from("profiles").select("school_id").eq("id", user.id).single() as any;
-    if (!profile?.school_id) return { success: false, message: "No school found" };
-    if (!["school_admin"].includes(profile.role)) return { success: false, message: "Unauthorized" };
+   try {
+     const parsed = classSchema.safeParse(formData);
+     if (!parsed.success) return { success: false, message: 'Validation failed' };
 
-    const { data: cls, error } = await supabase.from("classes").insert({
-      school_id: profile.school_id,
-      name: data.name,
-      level: data.level,
-      capacity: data.capacity || 40,
-      class_teacher_id: data.classTeacherId || null,
-      description: data.description || null,
-    } as any).select("id").single() as any;
+     const data = parsed.data;
+     const supabase = await createClient();
+     if (!supabase) return { success: false, message: 'Supabase not configured' };
 
-    if (error || !cls) return { success: false, message: error?.message || "Failed to create class" };
-    return { success: true, message: `Class "${data.name}" created`, data: { classId: cls.id } };
-  } catch (err: any) {
-    return { success: false, message: err.message };
-  }
-}
+     const { data: cls, error } = await supabase.from("classes").insert({
+       school_id: profile.school_id,
+       name: data.name,
+       level: data.level,
+       capacity: data.capacity || 40,
+       class_teacher_id: data.classTeacherId || null,
+       description: data.description || null,
+     } as any).select("id").single() as any;
+
+     if (error || !cls) return { success: false, message: 'Failed to create class' };
+     return { success: true, message: `Class "${data.name}" created`, data: { classId: cls.id } };
+   } catch (err: any) {
+     console.error('Error in createClassAction:', err);
+     return { success: false, message: 'An unexpected error occurred' };
+   }
+ }
 
 export async function updateClassAction(
-  classId: string,
-  formData: Partial<z.infer<typeof classSchema>>
+   classId: string,
+   formData: Partial<z.infer<typeof classSchema>>
 ): Promise<ActionResponse> {
-  try {
-    const supabase = (await createClient()) as any;
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { success: false, message: "Unauthorized" };
+   // STEP 1: Always verify authentication first
+   const supabase = await createClient();
+   const { data: { user }, error: authError } = await supabase.auth.getUser();
+   
+   if (authError || !user) {
+     return { success: false, message: 'Authentication required.' };
+   }
 
-    const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single() as any;
-    if (!["school_admin"].includes(profile?.role)) return { success: false, message: "Unauthorized" };
+   // STEP 2: Get user role and school_id from profiles
+   const { data: profile } = await supabase
+     .from('profiles')
+     .select('role, school_id, is_active')
+     .eq('id', user.id)
+     .single();
+   
+   if (!profile) {
+     return { success: false, message: 'Profile not found.' };
+   }
+   
+   if (!profile.is_active) {
+     return { success: false, message: 'Account is inactive.' };
+   }
+   
+   if (!profile.school_id) {
+     return { success: false, message: 'No school assigned to this account.' }
+   }
+   
+   // STEP 3: Check role permission - only school_admin can update classes
+   if (profile.role !== 'school_admin') {
+     return { success: false, message: 'You do not have permission for this action.' }
+   }
 
-    const update: any = {};
-    if (formData.name !== undefined) update.name = formData.name;
-    if (formData.level !== undefined) update.level = formData.level;
-    if (formData.capacity !== undefined) update.capacity = formData.capacity;
-    if (formData.classTeacherId !== undefined) update.class_teacher_id = formData.classTeacherId || null;
-    if (formData.description !== undefined) update.description = formData.description;
+   try {
+     // Verify the class belongs to the user's school
+     const { data: classCheck, error: classError } = await supabase
+       .from("classes")
+       .select("id, school_id")
+       .eq("id", classId)
+       .single();
+   
+     if (classError || !classCheck) {
+       return { success: false, message: 'Class not found.' };
+     }
+     
+     // STEP 4: Always scope queries to school_id
+     if (classCheck.school_id !== profile.school_id) {
+       return { success: false, message: 'Class does not belong to your school.' }
+     }
 
-    const { error } = await supabase.from("classes").update(update).eq("id", classId);
-    if (error) return { success: false, message: error.message };
-    return { success: true, message: "Class updated" };
-  } catch (err: any) {
-    return { success: false, message: err.message };
-  }
-}
+     const update: any = {};
+     if (formData.name !== undefined) update.name = formData.name;
+     if (formData.level !== undefined) update.level = formData.level;
+     if (formData.capacity !== undefined) update.capacity = formData.capacity;
+     if (formData.classTeacherId !== undefined) update.class_teacher_id = formData.classTeacherId || null;
+     if (formData.description !== undefined) update.description = formData.description;
+
+     const { error } = await supabase.from("classes").update(update).eq("id", classId);
+     if (error) return { success: false, message: 'Failed to update class' };
+     return { success: true, message: 'Class updated' };
+   } catch (err: any) {
+     console.error('Error in updateClassAction:', err);
+     return { success: false, message: 'An unexpected error occurred' };
+   }
+ }
 
 export async function deleteClassAction(classId: string): Promise<ActionResponse> {
   try {

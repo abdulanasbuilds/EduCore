@@ -1,6 +1,6 @@
 "use server";
 
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import { schoolConfig } from "@/lib/env";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { ReportCardTemplate } from "@/components/pdf/report-card";
@@ -9,44 +9,95 @@ export async function generateReportCardAction(
   studentId: string,
   termId: string
 ): Promise<{ success: boolean; buffer?: ArrayBuffer; error?: string }> {
-  try {
-    const admin = createAdminClient() as any;
+  // STEP 1: Always verify authentication first
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  
+  if (authError || !user) {
+    return { success: false, error: 'Authentication required.' };
+  }
 
-    const { data: student } = await admin
+  // STEP 2: Get user role and school_id from profiles
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role, school_id, is_active')
+    .eq('id', user.id)
+    .single();
+  
+  if (!profile) {
+    return { success: false, error: 'Profile not found.' };
+  }
+  
+  if (!profile.is_active) {
+    return { success: false, error: 'Account is inactive.' };
+  }
+  
+  if (!profile.school_id) {
+    return { success: false, error: 'No school assigned to this account.' };
+  }
+
+  // STEP 3: Check role permission - who can generate report cards?
+  // school_admin: can generate any student's report card in their school
+  // class_teacher/subject_teacher: can generate report cards for students in their classes
+  // parent: can generate report cards for their own children
+  // student: can generate their own report card
+  // For simplicity, we'll rely on RLS to enforce access control
+  // and just verify the user is authenticated
+
+  // STEP 4: Use regular client (RLS will protect the data)
+  // No admin client needed here since we're just reading data that RLS protects
+
+  try {
+    const { data: student, error: studentError } = await supabase
       .from("students")
       .select("full_name, admission_number")
       .eq("id", studentId)
       .single();
 
-    const { data: term } = await admin
+    if (studentError || !student) {
+      return { success: false, error: 'Student or term not found' };
+    }
+
+    const { data: term, error: termError } = await supabase
       .from("terms")
       .select("name, academic_year_id, academic_years(name)")
       .eq("id", termId)
       .single();
 
-    const { data: classHistory } = await admin
+    if (termError || !term) {
+      return { success: false, error: 'Student or term not found' };
+    }
+
+    // Verify the student belongs to the user's school (defense in depth)
+    const { data: studentSchoolCheck } = await supabase
+      .from("students")
+      .select("school_id")
+      .eq("id", studentId)
+      .single();
+
+    if (!studentSchoolCheck || studentSchoolCheck.school_id !== profile.school_id) {
+      return { success: false, error: 'Access denied.' };
+    }
+
+    const { data: classHistory } = await supabase
       .from("student_class_history")
       .select("class_id, classes(name)")
       .eq("student_id", studentId)
-      .eq("academic_year_id", term?.academic_year_id)
+      .eq("academic_year_id", term.academic_year_id)
       .eq("is_current", true)
       .limit(1)
       .single();
 
-    const { data: assessments } = await admin
+    const { data: assessments } = await supabase
       .from("assessments")
       .select("subject_id, subjects(name), max_score")
       .eq("term_id", termId)
       .eq("is_published", true);
 
-    const { data: grades } = await admin
+    const { data: grades } = await supabase
       .from("grades")
       .select("score, assessments(subject_id)")
       .eq("student_id", studentId);
-
-    if (!student || !term) {
-      return { success: false, error: "Student or term not found" };
-    }
 
     const subjectMap: Record<string, { classwork: number; exam: number; count: number }> = {};
     const totalBySubject: Record<string, number> = {};
@@ -94,7 +145,8 @@ export async function generateReportCardAction(
     const buffer = await renderToBuffer(ReportCardTemplate({ data }));
     return { success: true, buffer: buffer as unknown as ArrayBuffer };
   } catch (err: any) {
-    return { success: false, error: err.message };
+    console.error('Error in generateReportCardAction:', err);
+    return { success: false, error: 'An unexpected error occurred' };
   }
 }
 
@@ -102,27 +154,69 @@ export async function generateTermSummaryAction(
   studentId: string,
   termId: string
 ): Promise<{ success: boolean; data?: any; error?: string }> {
-  try {
-    const admin = createAdminClient() as any;
+  // STEP 1: Always verify authentication first
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  
+  if (authError || !user) {
+    return { success: false, error: 'Authentication required.' };
+  }
 
-    const { data: student } = await admin
+  // STEP 2: Get user role and school_id from profiles
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role, school_id, is_active')
+    .eq('id', user.id)
+    .single();
+  
+  if (!profile) {
+    return { success: false, error: 'Profile not found.' };
+  }
+  
+  if (!profile.is_active) {
+    return { success: false, error: 'Account is inactive.' };
+  }
+  
+  if (!profile.school_id) {
+    return { success: false, error: 'No school assigned to this account.' };
+  }
+
+  try {
+    const { data: student, error: studentError } = await supabase
       .from("students")
       .select("full_name, admission_number")
       .eq("id", studentId)
       .single();
 
-    const { data: term } = await admin
+    if (studentError || !student) {
+      return { success: false, error: 'Not found' };
+    }
+
+    const { data: term, error: termError } = await supabase
       .from("terms")
       .select("*, academic_years(name)")
       .eq("id", termId)
       .single();
 
-    const { data: grades } = await admin
+    if (termError || !term) {
+      return { success: false, error: 'Not found' };
+    }
+
+    // Verify the student belongs to the user's school (defense in depth)
+    const { data: studentSchoolCheck } = await supabase
+      .from("students")
+      .select("school_id")
+      .eq("id", studentId)
+      .single();
+
+    if (!studentSchoolCheck || studentSchoolCheck.school_id !== profile.school_id) {
+      return { success: false, error: 'Access denied.' };
+    }
+
+    const { data: grades } = await supabase
       .from("grades")
       .select("*, assessments(*, subjects(*), assessment_types(*))")
       .eq("student_id", studentId);
-
-    if (!student || !term) return { success: false, error: "Not found" };
 
     const termGrades = (grades || []).filter((g: any) => g.assessments?.term_id === termId && g.assessments?.is_published);
 
@@ -153,6 +247,7 @@ export async function generateTermSummaryAction(
       data: { student, term, subjects, grandTotal, grandMax, overall, classAverage: 0 },
     };
   } catch (err: any) {
-    return { success: false, error: err.message };
+    console.error('Error in generateTermSummaryAction:', err);
+    return { success: false, error: 'An unexpected error occurred' };
   }
 }

@@ -7,6 +7,8 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { schoolConfig } from "@/lib/env";
 import { Loader2 } from "lucide-react";
+import { headers } from 'next/headers';
+import { isRateLimited } from '@/lib/rate-limit';
 
 function LoginForm() {
   const router = useRouter();
@@ -29,54 +31,82 @@ function LoginForm() {
     }
   }, []);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!supabase) return;
+   const handleLogin = async (e: React.FormEvent) => {
+     e.preventDefault();
+     if (!supabase) return;
 
-    setLoading(true);
-    setError("");
+     // Rate limit login attempts: 10 attempts per minute per IP
+     const limited = await isRateLimited('login', 10, '1 m');
+     if (limited) {
+       setError("Too many attempts. Please wait a minute and try again.");
+       setLoading(false);
+       return;
+     }
 
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+     setLoading(true);
+     setError("");
 
-    if (authError) {
-      setError("Invalid email or password");
-      setLoading(false);
-      return;
-    }
+     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+       email,
+       password,
+     });
 
-    if (authData.user) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", authData.user.id)
-        .single();
+     if (authError) {
+       setError("Invalid email or password");
+       setLoading(false);
+       return;
+     }
 
-      const redirect = searchParams.get("redirect");
-      if (redirect) {
-        router.push(redirect);
-      } else if (profile) {
-        const roleMap: Record<string, string> = {
-          school_admin: "/admin",
-          class_teacher: "/teacher",
-          subject_teacher: "/subject-teacher",
-          bursar: "/bursar",
-          parent: "/parent",
-          student: "/student",
-        };
-        const dest = roleMap[profile.role] ?? "/";
-        router.push(dest);
-      } else {
-        setError("Account profile not found. Please contact the school office.");
-        setLoading(false);
-        return;
-      }
-    } else {
-        setLoading(false);
-    }
-  };
+     if (authData.user) {
+       const { data: profile } = await supabase
+         .from("profiles")
+         .select("role")
+         .eq("id", authData.user.id)
+         .single();
+
+       // Safe redirect — only allow internal paths
+       function getSafeRedirectUrl(
+         redirect: string | null
+       ): string {
+         // Default dashboard per role is handled by middleware
+         // Only accept paths that start with / and don't 
+         // contain // or protocol indicators
+         if (
+           redirect &&
+           redirect.startsWith('/') &&
+           !redirect.startsWith('//') &&
+           !redirect.includes('://') &&
+           redirect.length < 200
+         ) {
+           return redirect
+         }
+         // Default: middleware will handle role redirect
+         return '/'
+       }
+
+       const redirectParam = searchParams.get("redirect");
+       const safeRedirect = getSafeRedirectUrl(redirectParam);
+       
+       if (profile) {
+         const roleMap: Record<string, string> = {
+           school_admin: "/admin",
+           class_teacher: "/teacher",
+           subject_teacher: "/subject-teacher",
+           bursar: "/bursar",
+           parent: "/parent",
+           student: "/student",
+         };
+         const dest = roleMap[profile.role] ?? "/";
+         router.push(dest);
+       } else {
+         setError("Account profile not found. Please contact the school office.");
+         setLoading(false);
+         return;
+       }
+     } else {
+         setLoading(false);
+     }
+   };
 
   if (configError) {
     return (

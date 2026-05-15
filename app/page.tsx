@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 export default function LandingPage() {
   // Demo mode: redirect to /demo
-  if (process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
+  if (process.env.DEMO_MODE === 'true') {
     redirect("/demo");
   }
 

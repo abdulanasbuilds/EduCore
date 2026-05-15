@@ -23,7 +23,7 @@ const envSchema = z.object({
   NEXT_PUBLIC_SCHOOL_EMAIL: z.string().optional().default(""),
   NEXT_PUBLIC_SCHOOL_ADDRESS: z.string().optional().default(""),
   NEXT_PUBLIC_SCHOOL_WHATSAPP: z.string().optional().default(""),
-  DEMO_WHATSAPP: z.string().optional().default("233550357234"),
+  DEMO_WHATSAPP: z.string().optional().default("233550357243"),
   DEMO_EMAIL: z.string().optional().default("abdulanassofficial@gmail.com"),
   CRON_SECRET: z.string().optional(),
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),

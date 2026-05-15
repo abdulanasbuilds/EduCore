@@ -51,11 +51,12 @@ function LoginForm() {
        password,
      });
 
-     if (authError) {
-       setError("Invalid email or password");
-       setLoading(false);
-       return;
-     }
+      if (authError) {
+        console.error("Supabase auth error:", authError);
+        setError(authError.message || "Invalid email or password");
+        setLoading(false);
+        return;
+      }
 
      if (authData.user) {
        const { data: profile } = await supabase

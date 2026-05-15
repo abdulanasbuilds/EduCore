@@ -61,7 +61,7 @@ export async function middleware(request: NextRequest) {
     { pattern: /^\/student/, roles: ["student"] },
   ]
 
-  const publicPaths = ["/", "/login", "/setup", "/apply",
+  const publicPaths = ["/", "/demo", "/login", "/setup", "/apply",
                        "/register", "/forgot-password",
                        "/reset-password", "/api/health"]
 

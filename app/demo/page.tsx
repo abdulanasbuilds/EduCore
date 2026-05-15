@@ -200,13 +200,13 @@ export default function DemoPage() {
           </p>
           <div className="flex flex-col md:flex-row md:justify-center gap-4 mb-8">
             <a
-              href="https://wa.me/233244555666"
+              href="https://wa.me/233550357234"
               className="flex-1 bg-[#16a34a] text-white py-3 rounded-md hover:bg-[#16a34a]/90 transition-colors font-medium flex items-center justify-center gap-2"
             >
               💬 WhatsApp Me Now
             </a>
             <a
-              href="mailto:your@email.com"
+              href="mailto:abdulanassofficial@gmail.com"
               className="flex-1 border border-white hover:bg-white/10 py-3 rounded-md flex items-center justify-center gap-2 transition-colors"
             >
               📧 Send an Email

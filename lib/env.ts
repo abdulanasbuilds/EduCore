@@ -23,6 +23,8 @@ const envSchema = z.object({
   NEXT_PUBLIC_SCHOOL_EMAIL: z.string().optional().default(""),
   NEXT_PUBLIC_SCHOOL_ADDRESS: z.string().optional().default(""),
   NEXT_PUBLIC_SCHOOL_WHATSAPP: z.string().optional().default(""),
+  DEMO_WHATSAPP: z.string().optional().default("233550357234"),
+  DEMO_EMAIL: z.string().optional().default("abdulanassofficial@gmail.com"),
   CRON_SECRET: z.string().optional(),
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
 })
@@ -57,4 +59,10 @@ export const schoolConfig = {
   email: process.env.NEXT_PUBLIC_SCHOOL_EMAIL ?? "",
   address: process.env.NEXT_PUBLIC_SCHOOL_ADDRESS ?? "",
   whatsapp: process.env.NEXT_PUBLIC_SCHOOL_WHATSAPP ?? "",
+}
+
+// Demo page contact info — used for promotion
+export const demoConfig = {
+  whatsapp: process.env.DEMO_WHATSAPP ?? "233550357234",
+  email: process.env.DEMO_EMAIL ?? "abdulanassofficial@gmail.com",
 }

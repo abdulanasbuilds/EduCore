@@ -22,6 +22,7 @@ function formatPhone(phone: string): string {
 }
 
 async function logNotification({
+  schoolId,
   recipientPhone,
   recipientName,
   channel,
@@ -30,6 +31,7 @@ async function logNotification({
   status,
   errorMessage,
 }: {
+  schoolId: string
   recipientPhone: string
   recipientName: string
   channel: "sms" | "whatsapp" | "email"
@@ -41,20 +43,8 @@ async function logNotification({
   try {
     const supabase = createAdminClient() as any
     
-    // Fetch the first school ID (since it's a single-tenant deployment)
-    const { data: school } = await supabase
-      .from("schools")
-      .select("id")
-      .limit(1)
-      .single()
-
-    if (!school) {
-      console.error("No school found for notification logging")
-      return
-    }
-
     await supabase.from("notification_logs").insert({
-      school_id: school.id,
+      school_id: schoolId,
       recipient_phone: recipientPhone,
       recipient_name: recipientName,
       channel,
@@ -71,11 +61,13 @@ async function logNotification({
 }
 
 export async function sendSMS({
+  schoolId,
   to,
   message,
   recipientName,
   type,
 }: {
+  schoolId: string
   to: string
   message: string
   recipientName: string
@@ -97,6 +89,7 @@ export async function sendSMS({
     })
 
     await logNotification({
+      schoolId,
       recipientPhone: formattedPhone,
       recipientName,
       channel: "sms",
@@ -108,6 +101,7 @@ export async function sendSMS({
     return { success: true }
   } catch (error: any) {
     await logNotification({
+      schoolId,
       recipientPhone: formattedPhone,
       recipientName,
       channel: "sms",
@@ -123,11 +117,13 @@ export async function sendSMS({
 }
 
 export async function sendWhatsApp({
+  schoolId,
   to,
   message,
   recipientName,
   type,
 }: {
+  schoolId: string
   to: string
   message: string
   recipientName: string
@@ -149,6 +145,7 @@ export async function sendWhatsApp({
     })
 
     await logNotification({
+      schoolId,
       recipientPhone: formattedPhone,
       recipientName,
       channel: "whatsapp",
@@ -160,6 +157,7 @@ export async function sendWhatsApp({
     return { success: true }
   } catch (error: any) {
     await logNotification({
+      schoolId,
       recipientPhone: formattedPhone,
       recipientName,
       channel: "whatsapp",

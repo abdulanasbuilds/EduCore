@@ -222,9 +222,10 @@ export default function LandingPage() {
             <Link href="/apply" className="hover:text-white transition-colors">Apply for Admission</Link>
             <Link href="/register/parent" className="hover:text-white transition-colors">Parent Registration</Link>
           </div>
-          <p className="text-xs text-slate-500 opacity-70">
-            Powered by ABDUL ANAS and @abdulanasbuilds on all social media platform
-          </p>
+          <div className="text-xs text-slate-500 opacity-70">
+            <p>&copy; {currentYear} {schoolConfig.name}</p>
+            <p className="mt-1">Built with excellence by <a href="https://github.com/abdulanasbuilds" className="hover:text-slate-300 transition-colors">@abdulanasbuilds</a></p>
+          </div>
         </div>
       </footer>
     </div>

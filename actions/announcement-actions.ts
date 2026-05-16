@@ -21,7 +21,6 @@ const announcementSchema = z.object({
 export async function sendAnnouncementAction(
     formData: z.infer<typeof announcementSchema>
 ): Promise<ActionResponse<{ sent: number; failed: number; total: number }>> {
-    // Use requireAuth for authentication and authorization
     const auth = await requireAuth(['school_admin', 'class_teacher', 'subject_teacher', 'bursar']);
     if (isAuthError(auth)) {
       return { success: false, message: auth.error };
@@ -36,9 +35,7 @@ export async function sendAnnouncementAction(
       const data = parsed.data;
       const supabase = await createClient();
     
-    // Verify the school_id matches the user's school for class/guardian operations
     if (data.sendTo === "class" && data.classId) {
-      // Verify the class belongs to the user's school
       const { data: classCheck, error: classError } = await supabase
         .from("classes")
         .select("id, school_id")
@@ -51,7 +48,6 @@ export async function sendAnnouncementAction(
         return { success: false, message: 'Access denied.' };
       }
     } else if (data.sendTo === "individual" && data.guardianId) {
-      // Verify the guardian belongs to the user's school
       const { data: guardianCheck, error: guardianError } = await supabase
         .from("guardians")
         .select("id, school_id")
@@ -65,41 +61,44 @@ export async function sendAnnouncementAction(
       }
     }
 
-    let guardians: any[] = [];
+    let recipients: any[] = [];
 
     if (data.sendTo === "everyone") {
-      const { data: allGuardians } = await supabase
+      const { data: allPrimary } = await supabase
         .from("guardians")
-        .select("id, full_name, phone, whatsapp_number, is_primary, student_id")
+        .select("id, full_name, phone, whatsapp_number")
         .eq("school_id", auth.schoolId)
         .eq("is_primary", true);
-      guardians = allGuardians ?? [];
+      recipients = allPrimary ?? [];
     } else if (data.sendTo === "class") {
       if (!data.classId) return { success: false, message: "Class is required" };
-      const { data: classStudents } = await supabase
-        .from("student_class_history")
-        .select("student_id")
-        .eq("class_id", data.classId)
-        .eq("is_current", true);
-      if (!classStudents) return { success: false, message: "No students found" };
-      const studentIds = classStudents.map((s: any) => s.student_id);
       const { data: classGuardians } = await supabase
-        .from("guardians")
-        .select("id, full_name, phone, whatsapp_number, is_primary, student_id")
-        .in("student_id", studentIds)
-        .eq("is_primary", true);
-      guardians = classGuardians ?? [];
+        .from("student_guardians")
+        .select(`
+          guardian_id,
+          guardians!inner (
+            id,
+            full_name,
+            phone,
+            whatsapp_number,
+            is_primary
+          )
+        `)
+        .eq("guardians.is_primary", true)
+        .in("student_id", (await supabase.from("student_class_history").select("student_id").eq("class_id", data.classId).eq("is_current", true)).data?.map(s => s.student_id) || []) as any;
+      
+      recipients = classGuardians?.map((sg: any) => sg.guardians) || [];
     } else if (data.sendTo === "individual") {
       if (!data.guardianId) return { success: false, message: "Guardian is required" };
       const { data: singleGuardian } = await supabase
         .from("guardians")
-        .select("id, full_name, phone, whatsapp_number, is_primary, student_id")
+        .select("id, full_name, phone, whatsapp_number")
         .eq("id", data.guardianId)
         .single();
-      if (singleGuardian) guardians = [singleGuardian];
+      if (singleGuardian) recipients = [singleGuardian];
     }
 
-    if (guardians.length === 0) {
+    if (recipients.length === 0) {
       return { success: false, message: "No recipients found" };
     }
 
@@ -119,7 +118,7 @@ export async function sendAnnouncementAction(
         class_id: data.classId || null,
         individual_guardian_id: data.guardianId || null,
         channels,
-        recipient_count: guardians.length,
+        recipient_count: recipients.length,
         send_sms: data.sendSMS,
         send_whatsapp: data.sendWhatsApp,
       })
@@ -130,32 +129,36 @@ export async function sendAnnouncementAction(
     let sent = 0;
     let failed = 0;
 
-    for (const guardian of guardians) {
-      const phone = guardian.whatsapp_number || guardian.phone;
+    for (const recipient of recipients) {
+      const phone = recipient.whatsapp_number || recipient.phone;
       if (!phone) { failed++; continue; }
+
+      const schoolId = auth.schoolId;
 
       for (const channel of channels) {
         if (channel === "whatsapp") {
           const result = await sendWhatsApp({
+            schoolId,
             to: phone,
             message: fullMessage,
-            recipientName: guardian.full_name,
+            recipientName: recipient.full_name,
             type: "announcement",
           });
           if (result.success) sent++; else failed++;
         } else if (channel === "sms") {
           const result = await sendSMS({
+            schoolId,
             to: phone,
             message: fullMessage,
-            recipientName: guardian.full_name,
+            recipientName: recipient.full_name,
             type: "announcement",
           });
           if (result.success) sent++; else failed++;
         }
       }
 
-      if (guardians.indexOf(guardian) < guardians.length - 1) {
-        await new Promise((resolve) => setTimeout(resolve, 100));
+      if (recipients.indexOf(recipient) < recipients.length - 1) {
+        await new Promise((resolve) => setTimeout(resolve, 50));
       }
     }
 
@@ -169,20 +172,19 @@ export async function sendAnnouncementAction(
     return {
       success: true,
       message: `Sent to ${sent} recipients. ${failed > 0 ? `${failed} failed.` : ""}`,
-      data: { sent, failed, total: guardians.length },
+      data: { sent, failed, total: recipients.length },
     };
     } catch (error) {
       console.error("Error in sendAnnouncementAction:", error);
       return { success: false, message: "An unexpected error occurred" };
     }
-  }
+}
 
 export async function sendQuickMessageAction(
    guardianId: string,
    message: string,
    studentName?: string
 ): Promise<ActionResponse> {
-   // STEP 1: Always verify authentication first
    const supabase = await createClient();
    const { data: { user }, error: authError } = await (supabase.auth as any).getUser();
    
@@ -190,42 +192,25 @@ export async function sendQuickMessageAction(
      return { success: false, message: 'Authentication required.' };
    }
 
-   // STEP 2: Get user role and school_id from profiles
    const { data: profile } = await supabase
      .from('profiles')
      .select('role, school_id, is_active')
      .eq('id', user.id)
      .single();
    
-   if (!profile) {
-     return { success: false, message: 'Profile not found.' };
-   }
+   if (!profile?.is_active) return { success: false, message: 'Account is inactive.' };
+   if (!profile?.school_id) return { success: false, message: 'No school assigned.' };
    
-   if (!profile.is_active) {
-     return { success: false, message: 'Account is inactive.' }
-   }
-   
-   if (!profile.school_id) {
-     return { success: false, message: 'No school assigned to this account.' }
-   }
-   
-   // STEP 3: Check role permission - who can send quick messages?
-   // school_admin: can send messages to any guardian in their school
-   // class_teacher/subject_teacher: can send messages to guardians of students in their classes
-   // bursar: can send messages to all guardians? (for fee-related communication)
-   // parent/student: cannot send quick messages (privacy concern)
    if (!['school_admin', 'class_teacher', 'subject_teacher', 'bursar'].includes(profile.role)) {
-     return { success: false, message: 'You do not have permission for this action.' }
+     return { success: false, message: 'Permission denied.' };
    }
 
    try {
-     // STEP 4: For looking up the specific guardian, we need to verify they belong to the user's school
-     // We can use the regular client with RLS for this lookup since we're just reading one record
      const { data: guardian, error: guardianError } = await supabase
        .from("guardians")
-       .select("id, full_name, phone, whatsapp_number, student_id")
+       .select("id, full_name, phone, whatsapp_number")
        .eq("id", guardianId)
-       .eq("school_id", profile.school_id)  // Important: scope to user's school
+       .eq("school_id", profile.school_id)
        .single();
 
      if (guardianError || !guardian) {
@@ -236,146 +221,120 @@ export async function sendQuickMessageAction(
      const phone = guardian.whatsapp_number || guardian.phone;
      if (!phone) return { success: false, message: "No phone number found" };
 
-     let delivered = 0;
-     let failed = 0;
+     const schoolId = profile.school_id;
 
      const waResult = await sendWhatsApp({
+       schoolId,
        to: phone,
        message: fullMessage,
        recipientName: guardian.full_name,
        type: "direct_message",
      });
-     if (waResult.success) delivered++; else failed++;
 
      if (!waResult.success) {
        const smsResult = await sendSMS({
+         schoolId,
          to: phone,
          message: fullMessage,
          recipientName: guardian.full_name,
          type: "direct_message",
        });
-       if (smsResult.success) delivered++; else failed++;
+       return {
+         success: smsResult.success,
+         message: smsResult.success ? "Sent via fallback SMS" : "Failed to send message",
+       };
      }
 
-     return {
-       success: failed === 0,
-       message: failed === 0 ? "Message sent successfully" : "Message sent via fallback SMS",
-     };
+     return { success: true, message: "Message sent successfully" };
    } catch (err: any) {
-     console.error('Error in sendQuickMessageAction:', err)
      return { success: false, message: 'An unexpected error occurred' };
    }
- }
+}
 
 export async function getRecipientsCountAction(params: {
   sendTo: "everyone" | "class" | "individual";
   classId?: string;
   guardianId?: string;
 }): Promise<{ count: number }> {
-  const adminClient = createAdminClient() as any;
+  const supabase = await createClient();
+  const { data: { user } } = await (supabase.auth as any).getUser();
+  if (!user) return { count: 0 };
 
-  const { data: profile } = await adminClient
+  const { data: profile } = await supabase
     .from("profiles")
     .select("school_id")
-    .limit(1)
+    .eq("id", user.id)
     .single();
 
-  if (!profile) return { count: 0 };
+  if (!profile?.school_id) return { count: 0 };
 
   if (params.sendTo === "everyone") {
-    const { count } = await adminClient
+    const { count } = await supabase
       .from("guardians")
-      .select("id", { count: "exact" })
+      .select("id", { count: "exact", head: true })
       .eq("school_id", profile.school_id)
       .eq("is_primary", true);
     return { count: count ?? 0 };
   }
 
   if (params.sendTo === "class" && params.classId) {
-    const { data: classStudents } = await adminClient
+    const { data: students } = await supabase
       .from("student_class_history")
       .select("student_id")
       .eq("class_id", params.classId)
       .eq("is_current", true);
-    if (!classStudents) return { count: 0 };
-    const studentIds = classStudents.map((s: any) => s.student_id);
-    const { count } = await adminClient
-      .from("guardians")
-      .select("id", { count: "exact" })
-      .in("student_id", studentIds)
-      .eq("is_primary", true);
+    if (!students || students.length === 0) return { count: 0 };
+    
+    const { count } = await supabase
+      .from("student_guardians")
+      .select("guardian_id", { count: "exact", head: true })
+      .in("student_id", students.map(s => s.student_id))
+      .eq("guardians.is_primary", true);
     return { count: count ?? 0 };
   }
 
-  if (params.sendTo === "individual" && params.guardianId) {
-    return { count: 1 };
-  }
-
+  if (params.sendTo === "individual") return { count: 1 };
   return { count: 0 };
 }
 
 export async function searchGuardiansAction(query: string): Promise<ActionResponse<{ guardians: any[] }>> {
-   // STEP 1: Always verify authentication first
    const supabase = await createClient();
-   const { data: { user }, error: authError } = await (supabase.auth as any).getUser();
-   
-   if (authError || !user) {
-     return { success: false, message: 'Authentication required.' };
-   }
+   const { data: { user } } = await (supabase.auth as any).getUser();
+   if (!user) return { success: false, message: 'Unauthorized' };
 
-   // STEP 2: Get user role and school_id from profiles
    const { data: profile } = await supabase
      .from('profiles')
-     .select('role, school_id, is_active')
+     .select('role, school_id')
      .eq('id', user.id)
      .single();
    
-   if (!profile) {
-     return { success: false, message: 'Profile not found.' };
-   }
-   
-   if (!profile.is_active) {
-     return { success: false, message: 'Account is inactive.' }
-   }
-   
-   if (!profile.school_id) {
-     return { success: false, message: 'No school assigned to this account.' }
-   }
-
-   // STEP 3: Check role permission - who can search guardians?
-   // school_admin: can search all guardians in their school
-   // class_teacher/subject_teacher: can search guardians of students in their classes
-   // bursar: can search all guardians? (for fee-related communication)
-   // parent/student: cannot search guardians (privacy concern)
-   if (!['school_admin', 'class_teacher', 'subject_teacher', 'bursar'].includes(profile.role)) {
-     return { success: false, message: 'You do not have permission for this action.' }
-   }
-
-   // STEP 4: Use admin client for operations that need to bypass RLS (like searching across tables)
-   // But only after authentication and authorization
-   const adminClient = createAdminClient() as any;
-
-   // Verify the search is scoped to the user's school
-   // (Note: We're using admin client but still scoping to school_id for defense in depth)
+   if (!profile?.school_id) return { success: false, message: 'Unauthorized' };
    if (!query) return { success: true, message: 'OK', data: { guardians: [] } };
 
-   // Fix injection vulnerability: Use parameterized query instead of string interpolation
-   // Build the OR condition properly using Supabase's or() method with proper parameterization
    const searchTerm = `%${query}%`;
-   
-   const { data: guardians } = await adminClient
+   const { data: guardians } = await supabase
      .from("guardians")
      .select(`
        id, full_name, phone, whatsapp_number, relationship, is_primary,
-       student_id,
-       students!inner(full_name, admission_number)
+       student_guardians!inner (
+         students (full_name, admission_number)
+       )
      `)
      .eq("school_id", profile.school_id)
      .or(`full_name.ilike.${searchTerm},phone.ilike.${searchTerm}`)
      .limit(20);
 
-   return { success: true, message: 'Guardians found', data: { guardians: guardians ?? [] } };
- }
+   return { 
+     success: true, 
+     message: 'OK', 
+     data: { 
+       guardians: (guardians || []).map((g: any) => ({
+         ...g,
+         students: g.student_guardians?.[0]?.students
+       }))
+     } 
+   };
+}
 
 export async function getAnnouncementHistoryAction(params?: {
   dateFrom?: string;
@@ -412,15 +371,9 @@ export async function getAnnouncementHistoryAction(params?: {
     query = query.eq("created_by", user.id);
   }
 
-  if (params?.dateFrom) {
-    query = query.gte("created_at", params.dateFrom);
-  }
-  if (params?.dateTo) {
-    query = query.lte("created_at", params.dateTo + "T23:59:59");
-  }
-  if (params?.target && params.target !== "all") {
-    query = query.eq("target", params.target);
-  }
+  if (params?.dateFrom) query = query.gte("created_at", params.dateFrom);
+  if (params?.dateTo) query = query.lte("created_at", params.dateTo + "T23:59:59");
+  if (params?.target && params.target !== "all") query = query.eq("target", params.target);
 
   const { data: announcements } = await query.limit(100);
   return { announcements: announcements ?? [] };

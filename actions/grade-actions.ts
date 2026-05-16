@@ -1,7 +1,6 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
 import type { ActionResponse } from "@/types";
 import { z } from "zod";
 import { features, schoolConfig } from "@/lib/env";
@@ -166,11 +165,11 @@ export async function publishAssessmentAction(
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("role")
+      .select("role, school_id")
       .eq("id", user.id)
       .single();
 
-    if (!["school_admin", "class_teacher", "subject_teacher"].includes(profile?.role || "")) {
+    if (!profile?.school_id || !["school_admin", "class_teacher", "subject_teacher"].includes(profile.role)) {
       return { success: false, message: "Unauthorized: Only teachers and admins can publish assessments" };
     }
 
@@ -185,7 +184,6 @@ export async function publishAssessmentAction(
     if (error) return { success: false, message: error.message };
 
      // For publishing assessments, we need to look up related data for notifications
-     // We can use the regular client with RLS since we're already authenticated
      const { data: assessment } = await supabase
        .from("assessments")
        .select("*, subjects(name), classes(name)")
@@ -195,33 +193,45 @@ export async function publishAssessmentAction(
      if (assessment) {
        const { data: grades } = await supabase
          .from("grades")
-         .select("student_id")
+         .select("student_id, score")
          .eq("assessment_id", assessmentId);
-       if (grades) {
-         const studentIds = [...new Set(grades.map((g: any) => g.student_id))];
-         for (const studentId of studentIds) {
-           const { data: student } = await supabase.from("students").select("full_name, admission_number").eq("id", studentId).single();
-           const { data: guardian } = await supabase
+         
+       if (grades && grades.length > 0) {
+         for (const grade of grades) {
+           if (grade.score === null) continue;
+
+           // Correct join for primary guardian
+           const { data: sg } = await supabase
              .from("student_guardians")
-             .select("guardians(full_name, phone, whatsapp_number)")
-             .eq("student_id", studentId)
-             .eq("is_primary", true)
-             .single();
-            const g = (guardian?.guardians as any)?.[0];
+             .select(`
+               guardians!inner (
+                 full_name, 
+                 phone, 
+                 whatsapp_number
+               )
+             `)
+             .eq("student_id", grade.student_id)
+             .eq("guardians.is_primary", true)
+             .maybeSingle() as any;
+
+           const g = sg?.guardians;
            if (!g?.phone) continue;
+
+           const { data: student } = await supabase.from("students").select("full_name").eq("id", grade.student_id).single();
+           
            const parentName = g.full_name || "Parent";
            const phone = g.whatsapp_number || g.phone;
-           const { data: grade } = await supabase.from("grades").select("score").eq("assessment_id", assessmentId).eq("student_id", studentId).single();
-           if (!grade?.score && grade?.score !== 0) continue;
            const score = grade.score;
            const max = assessment.max_score;
            const pct = Math.round((score / max) * 100);
            const gradeL = pct >= 90 ? "A+" : pct >= 80 ? "A" : pct >= 70 ? "B" : pct >= 60 ? "C" : pct >= 50 ? "D" : "F";
            const portal = `${process.env.NEXT_PUBLIC_APP_URL}/parent/grades`;
            const msg = gradePublished(parentName, student?.full_name || "", assessment.subjects?.name || "", score, max, gradeL, portal);
-           sendWhatsApp({ to: phone, message: msg, recipientName: parentName, type: "grade" }).catch(() => {});
+           
+           const schoolId = profile.school_id;
+           sendWhatsApp({ schoolId, to: phone, message: msg, recipientName: parentName, type: "grade" }).catch(() => {});
            if (!features.smsEnabled) {
-             sendSMS({ to: phone, message: msg, recipientName: parentName, type: "grade" }).catch(() => {});
+             sendSMS({ schoolId, to: phone, message: msg, recipientName: parentName, type: "grade" }).catch(() => {});
            }
          }
        }

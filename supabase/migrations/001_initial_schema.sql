@@ -809,3 +809,62 @@ ON admission_applications
 FOR INSERT
 TO anon
 WITH CHECK (true);
+
+-- Public can read classes (for application form)
+CREATE POLICY "public_read_classes"
+ON classes
+FOR SELECT
+TO anon
+USING (true);
+
+-- ==========================================
+-- RPC FUNCTIONS
+-- ==========================================
+
+-- Function to record payment and update balance atomically
+CREATE OR REPLACE FUNCTION update_student_fee_payment(
+    p_student_fee_id UUID,
+    p_amount INTEGER,
+    p_payment_method payment_method_type,
+    p_reference TEXT,
+    p_recorded_by UUID
+) RETURNS VOID AS $$
+DECLARE
+    v_student_id UUID;
+    v_receipt_number TEXT;
+BEGIN
+    -- 1. Get student ID from student_fee
+    SELECT student_id INTO v_student_id FROM student_fees WHERE id = p_student_fee_id;
+    
+    -- 2. Generate unique receipt number (e.g., REC-123456)
+    v_receipt_number := 'REC-' || floor(extract(epoch from now())) || '-' || floor(random() * 1000);
+    
+    -- 3. Insert payment record
+    INSERT INTO fee_payments (
+        student_fee_id,
+        student_id,
+        amount,
+        payment_method,
+        reference_number,
+        receipt_number,
+        recorded_by,
+        payment_date
+    ) VALUES (
+        p_student_fee_id,
+        v_student_id,
+        p_amount,
+        p_payment_method,
+        p_reference,
+        v_receipt_number,
+        p_recorded_by,
+        CURRENT_DATE
+    );
+    
+    -- 4. Update amount_paid in student_fees
+    -- (The update_student_fees_status trigger will automatically update the status)
+    UPDATE student_fees
+    SET amount_paid = amount_paid + p_amount
+    WHERE id = p_student_fee_id;
+
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;

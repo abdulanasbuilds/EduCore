@@ -26,6 +26,7 @@ export default function TeacherGradesPage() {
         .from("assessments")
         .select("*, classes(name), subjects(name)")
         .eq("is_published", false)
+        .eq("created_by", user.id)
         .order("created_at", { ascending: false });
 
       if (data) setAssessments(data);

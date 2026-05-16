@@ -238,7 +238,7 @@ export async function bulkCreateStudentsAction(
     try {
       const year = new Date().getFullYear();
       const seq = String(Math.floor(Math.random() * 9000) + 1000);
-      const admissionNumber = `EDU-${year}-${seq}`;
+      const admissionNumber = s.admissionNumber || `EDU-${year}-${seq}`;
 
       const { data: student, error: sErr } = await supabase.from("students").insert({
         school_id: schoolId,
@@ -247,7 +247,7 @@ export async function bulkCreateStudentsAction(
         gender: s.gender || 'Male',
         date_of_birth: s.dateOfBirth || '2010-01-01',
         status: 'Active',
-        enrollment_date: new Date().toISOString().split('T')[0]
+        enrollment_date: s.enrollmentDate || new Date().toISOString().split('T')[0]
       }).select("id").single();
 
       if (sErr || !student) continue;

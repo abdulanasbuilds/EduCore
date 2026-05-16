@@ -24,7 +24,7 @@ export function CSVImportModal({ isOpen, onClose, classes }: CSVImportModalProps
   const router = useRouter();
 
   const handleDownloadTemplate = () => {
-    const template = "fullName,gender,dateOfBirth,classId,guardianName,guardianPhone,guardianRelationship\nJohn Doe,Male,2010-05-15," + (classes[0]?.id || "CLASS_ID_HERE") + ",Jane Doe,0241234567,Mother";
+    const template = "admission_number,full_name,date_of_birth,gender,class_name,enrollment_date,parent_name,parent_phone,parent_whatsapp,parent_relationship\nANA-2025-0001,Kofi Mensah,2012-03-15,Male," + (classes[0]?.name || "Primary 4") + ",2025-09-01,Ama Mensah,0244123456,0244123456,Mother";
     const blob = new Blob([template], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -50,18 +50,20 @@ export function CSVImportModal({ isOpen, onClose, classes }: CSVImportModalProps
         const validationErrors: { row: number; error: string }[] = [];
 
         data.forEach((row, index) => {
-          if (!row["fullName"]) validationErrors.push({ row: index + 1, error: "Missing fullName" });
-          if (!row["dateOfBirth"]) validationErrors.push({ row: index + 1, error: "Missing dateOfBirth" });
+          if (!row["admission_number"]) validationErrors.push({ row: index + 1, error: "Missing admission_number" });
+          if (!row["full_name"]) validationErrors.push({ row: index + 1, error: "Missing full_name" });
+          if (!row["date_of_birth"]) validationErrors.push({ row: index + 1, error: "Missing date_of_birth" });
           if (!["Male", "Female"].includes(row["gender"])) validationErrors.push({ row: index + 1, error: "Invalid gender. Must be Male or Female" });
+          if (!row["enrollment_date"]) validationErrors.push({ row: index + 1, error: "Missing enrollment_date" });
           
-          const classId = row["classId"];
-          if (!classes.some(c => c.id === classId)) {
-            validationErrors.push({ row: index + 1, error: `Class ID '${classId}' not found in system` });
+          const className = row["class_name"];
+          if (!classes.some(c => c.name === className)) {
+            validationErrors.push({ row: index + 1, error: `Class '${className}' not found in system` });
           }
 
-          if (!row["guardianName"]) validationErrors.push({ row: index + 1, error: "Missing guardianName" });
-          if (!row["guardianPhone"]) validationErrors.push({ row: index + 1, error: "Missing guardianPhone" });
-          if (!row["guardianRelationship"]) validationErrors.push({ row: index + 1, error: "Missing guardianRelationship" });
+          if (!row["parent_name"]) validationErrors.push({ row: index + 1, error: "Missing parent_name" });
+          if (!row["parent_phone"]) validationErrors.push({ row: index + 1, error: "Missing parent_phone" });
+          if (!row["parent_relationship"]) validationErrors.push({ row: index + 1, error: "Missing parent_relationship" });
         });
 
         setPreview(data);
@@ -74,7 +76,19 @@ export function CSVImportModal({ isOpen, onClose, classes }: CSVImportModalProps
     if (errors.length > 0 || preview.length === 0) return;
 
     setIsImporting(true);
-    const result = await bulkCreateStudentsAction(preview);
+    const mappedPreview = preview.map(row => ({
+      admissionNumber: row["admission_number"],
+      fullName: row["full_name"],
+      dateOfBirth: row["date_of_birth"],
+      gender: row["gender"],
+      enrollmentDate: row["enrollment_date"],
+      classId: classes.find(c => c.name === row["class_name"])?.id,
+      guardianName: row["parent_name"],
+      guardianPhone: row["parent_phone"],
+      guardianRelationship: row["parent_relationship"]
+    }));
+
+    const result = await bulkCreateStudentsAction(mappedPreview);
 
     if (result.success) {
       setImportResult({ success: result.data?.count || preview.length, failed: 0 });
@@ -213,9 +227,9 @@ export function CSVImportModal({ isOpen, onClose, classes }: CSVImportModalProps
                       {preview.slice(0, 50).map((row, i) => (
                         <tr key={i} className={errors.some(e => e.row === i + 1) ? "bg-red-50/50" : ""}>
                         <td className="px-4 py-2 text-slate-500">{i + 1}</td>
-                        <td className="px-4 py-2 font-medium">{row["fullName"]}</td>
-                        <td className="px-4 py-2">{classes.find(c => c.id === row["classId"])?.name || row["classId"]}</td>
-                        <td className="px-4 py-2">{row["guardianName"]}</td>
+                        <td className="px-4 py-2 font-medium">{row["full_name"]}</td>
+                        <td className="px-4 py-2">{row["class_name"]}</td>
+                        <td className="px-4 py-2">{row["parent_name"]}</td>
                         </tr>
                       ))}
                     </tbody>

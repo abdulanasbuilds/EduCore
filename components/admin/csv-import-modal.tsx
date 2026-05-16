@@ -5,6 +5,7 @@ import Papa from "papaparse";
 import { Upload, X, Download, AlertCircle, CheckCircle2, FileSpreadsheet } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { bulkCreateStudentsAction } from "@/actions/student-actions";
 
 interface CSVImportModalProps {
   isOpen: boolean;
@@ -23,7 +24,7 @@ export function CSVImportModal({ isOpen, onClose, classes }: CSVImportModalProps
   const router = useRouter();
 
   const handleDownloadTemplate = () => {
-    const template = "Full Name,Date of Birth (YYYY-MM-DD),Gender (Male/Female),Class Name,Guardian Name,Guardian Phone,Relationship\nJohn Doe,2010-05-15,Male,Primary 4,Jane Doe,0241234567,Mother";
+    const template = "fullName,gender,dateOfBirth,classId,guardianName,guardianPhone,guardianRelationship\nJohn Doe,Male,2010-05-15," + (classes[0]?.id || "CLASS_ID_HERE") + ",Jane Doe,0241234567,Mother";
     const blob = new Blob([template], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -49,18 +50,18 @@ export function CSVImportModal({ isOpen, onClose, classes }: CSVImportModalProps
         const validationErrors: { row: number; error: string }[] = [];
 
         data.forEach((row, index) => {
-          if (!row["Full Name"]) validationErrors.push({ row: index + 1, error: "Missing Full Name" });
-          if (!row["Date of Birth (YYYY-MM-DD)"]) validationErrors.push({ row: index + 1, error: "Missing Date of Birth" });
-          if (!["Male", "Female"].includes(row["Gender (Male/Female)"])) validationErrors.push({ row: index + 1, error: "Invalid Gender. Must be Male or Female" });
+          if (!row["fullName"]) validationErrors.push({ row: index + 1, error: "Missing fullName" });
+          if (!row["dateOfBirth"]) validationErrors.push({ row: index + 1, error: "Missing dateOfBirth" });
+          if (!["Male", "Female"].includes(row["gender"])) validationErrors.push({ row: index + 1, error: "Invalid gender. Must be Male or Female" });
           
-          const className = row["Class Name"];
-          if (!classes.some(c => c.name === className)) {
-            validationErrors.push({ row: index + 1, error: `Class '${className}' not found in system` });
+          const classId = row["classId"];
+          if (!classes.some(c => c.id === classId)) {
+            validationErrors.push({ row: index + 1, error: `Class ID '${classId}' not found in system` });
           }
 
-          if (!row["Guardian Name"]) validationErrors.push({ row: index + 1, error: "Missing Guardian Name" });
-          if (!row["Guardian Phone"]) validationErrors.push({ row: index + 1, error: "Missing Guardian Phone" });
-          if (!row["Relationship"]) validationErrors.push({ row: index + 1, error: "Missing Relationship" });
+          if (!row["guardianName"]) validationErrors.push({ row: index + 1, error: "Missing guardianName" });
+          if (!row["guardianPhone"]) validationErrors.push({ row: index + 1, error: "Missing guardianPhone" });
+          if (!row["guardianRelationship"]) validationErrors.push({ row: index + 1, error: "Missing guardianRelationship" });
         });
 
         setPreview(data);
@@ -73,86 +74,13 @@ export function CSVImportModal({ isOpen, onClose, classes }: CSVImportModalProps
     if (errors.length > 0 || preview.length === 0) return;
 
     setIsImporting(true);
-    let successCount = 0;
-    let failedCount = 0;
+    const result = await bulkCreateStudentsAction(preview);
 
-    const { data: { user } } = await (supabase.auth as any).getUser();
-    const { data: profile } = await supabase.from("profiles").select("school_id").eq("id", user?.id).single();
-    
-    // Get active term and year
-    const { data: activeTerm } = await supabase.from("terms").select("id, academic_year_id").eq("school_id", profile?.school_id).eq("status", "active").single();
-    
-    // Get count for admission number generation
-    const { count } = await supabase.from("students").select("*", { count: "exact", head: true }).eq("school_id", profile?.school_id);
-    let seq = (count || 0) + 1;
-    const year = new Date().getFullYear();
-    const schoolCode = process.env.NEXT_PUBLIC_SCHOOL_CODE || "EDC";
-
-    for (const row of preview) {
-      try {
-        const classObj = classes.find(c => c.name === row["Class Name"]);
-        if (!classObj) throw new Error("Class not found");
-
-        const admissionNumber = `${schoolCode}-${year}-${String(seq).padStart(4, "0")}`;
-        seq++;
-
-        // Create student
-        const { data: student, error: studentError } = await supabase
-          .from("students")
-          .insert({
-            school_id: profile?.school_id,
-            admission_number: admissionNumber,
-            full_name: row["Full Name"],
-            date_of_birth: row["Date of Birth (YYYY-MM-DD)"],
-            gender: row["Gender (Male/Female)"],
-            enrollment_date: new Date().toISOString().split("T")[0],
-            status: "Active" as const,
-          })
-          .select("id")
-          .single();
-
-        if (studentError) throw studentError;
-
-        // Create history
-        if (activeTerm) {
-          await supabase.from("student_class_history").insert({
-            student_id: student.id,
-            class_id: classObj.id,
-            academic_year_id: activeTerm.academic_year_id,
-            is_current: true,
-            enrolled_date: new Date().toISOString().split("T")[0],
-            outcome: "active" as const,
-          });
-        }
-
-        // Create guardian
-        const { data: guardian } = await supabase
-          .from("guardians")
-          .insert({
-            full_name: row["Guardian Name"],
-            phone: row["Guardian Phone"],
-            relationship: row["Relationship"],
-            is_primary: true,
-            school_id: profile?.school_id,
-          })
-          .select("id")
-          .single();
-
-        if (guardian) {
-          await supabase.from("student_guardians").insert({
-            student_id: student.id,
-            guardian_id: guardian.id,
-          });
-        }
-
-        successCount++;
-      } catch (err) {
-        console.error("Row import failed:", err);
-        failedCount++;
-      }
+    if (result.success) {
+      setImportResult({ success: result.data?.count || preview.length, failed: 0 });
+    } else {
+      alert(result.message);
     }
-
-    setImportResult({ success: successCount, failed: failedCount });
     setIsImporting(false);
     router.refresh();
   };
@@ -284,10 +212,10 @@ export function CSVImportModal({ isOpen, onClose, classes }: CSVImportModalProps
                     <tbody className="divide-y">
                       {preview.slice(0, 50).map((row, i) => (
                         <tr key={i} className={errors.some(e => e.row === i + 1) ? "bg-red-50/50" : ""}>
-                          <td className="px-4 py-2 text-slate-500">{i + 1}</td>
-                          <td className="px-4 py-2 font-medium">{row["Full Name"]}</td>
-                          <td className="px-4 py-2">{row["Class Name"]}</td>
-                          <td className="px-4 py-2">{row["Guardian Name"]}</td>
+                        <td className="px-4 py-2 text-slate-500">{i + 1}</td>
+                        <td className="px-4 py-2 font-medium">{row["fullName"]}</td>
+                        <td className="px-4 py-2">{classes.find(c => c.id === row["classId"])?.name || row["classId"]}</td>
+                        <td className="px-4 py-2">{row["guardianName"]}</td>
                         </tr>
                       ))}
                     </tbody>

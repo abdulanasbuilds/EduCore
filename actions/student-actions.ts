@@ -28,11 +28,8 @@ const studentSchema = z.object({
 export async function createStudentAction(
    formData: z.infer<typeof studentSchema>
 ): Promise<ActionResponse<{ studentId: string; admissionNumber: string }>> {
-   // Use requireAuth for authentication and authorization
    const auth = await requireAuth(['school_admin']);
-   if (isAuthError(auth)) {
-     return { success: false, message: auth.error };
-   }
+   if (isAuthError(auth)) return { success: false, message: auth.error };
    
    try {
      const parsed = studentSchema.safeParse(formData);
@@ -83,7 +80,6 @@ export async function createStudentAction(
        return { success: false, message: studentError?.message || "Failed to create student" };
      }
 
-     // Get current academic year
      const { data: currentYear } = await supabase
        .from("academic_years")
        .select("id")
@@ -102,7 +98,6 @@ export async function createStudentAction(
        });
      }
 
-     // Create primary guardian
      const { data: guardian1 } = await supabase
        .from("guardians")
        .insert({
@@ -124,29 +119,6 @@ export async function createStudentAction(
        });
      }
 
-     // Create secondary guardian if provided
-     if (data.guardian2Name && data.guardian2Phone) {
-       const { data: guardian2 } = await supabase
-         .from("guardians")
-         .insert({
-           full_name: data.guardian2Name,
-           phone: data.guardian2Phone,
-           relationship: data.guardian2Relationship || "Guardian",
-           is_primary: false,
-           school_id: schoolId,
-         })
-         .select("id")
-         .single();
-
-       if (guardian2) {
-         await supabase.from("student_guardians").insert({
-           student_id: student.id,
-           guardian_id: guardian2.id,
-         });
-       }
-     }
-
-     // Assign current term fees
      const { data: currentTerm } = await supabase
        .from("terms")
        .select("id")
@@ -176,34 +148,25 @@ export async function createStudentAction(
 
      return {
        success: true,
-       message: `Student ${data.fullName} enrolled successfully with admission number ${admissionNumber}`,
+       message: `Student ${data.fullName} enrolled successfully`,
        data: { studentId: student.id, admissionNumber },
      };
    } catch (error) {
      console.error("Create student error:", error);
      return { success: false, message: "An unexpected error occurred" };
    }
- }
+}
 
 export async function updateStudentAction(
   studentId: string,
   updates: Record<string, unknown>
 ): Promise<ActionResponse> {
+  const auth = await requireAuth(['school_admin']);
+  if (isAuthError(auth)) return { success: false, message: auth.error };
+
   try {
     const supabase = await createClient();
     if (!supabase) return { success: false, message: "Supabase not configured" };
-    const { data: { user } } = await (supabase.auth as any).getUser();
-    if (!user) return { success: false, message: "Unauthorized" };
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-
-    if (!["school_admin"].includes(profile?.role || "")) {
-      return { success: false, message: "Unauthorized: Only admins can update students" };
-    }
 
     const { error } = await supabase
       .from("students")
@@ -222,21 +185,12 @@ export async function withdrawStudentAction(
   reason: string,
   withdrawalDate: string
 ): Promise<ActionResponse> {
+  const auth = await requireAuth(['school_admin']);
+  if (isAuthError(auth)) return { success: false, message: auth.error };
+
   try {
     const supabase = await createClient();
     if (!supabase) return { success: false, message: "Supabase not configured" };
-    const { data: { user } } = await (supabase.auth as any).getUser();
-    if (!user) return { success: false, message: "Unauthorized" };
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-
-    if (!["school_admin"].includes(profile?.role || "")) {
-      return { success: false, message: "Unauthorized: Only admins can withdraw students" };
-    }
 
     const { error } = await supabase
       .from("students")
@@ -249,7 +203,6 @@ export async function withdrawStudentAction(
 
     if (error) return { success: false, message: error.message };
 
-    // Close current class history
     await supabase
       .from("student_class_history")
       .update({
@@ -264,4 +217,84 @@ export async function withdrawStudentAction(
   } catch {
     return { success: false, message: "An unexpected error occurred" };
   }
+}
+
+export async function bulkCreateStudentsAction(
+  students: any[]
+): Promise<ActionResponse<{ count: number }>> {
+  const auth = await requireAuth(['school_admin']);
+  if (isAuthError(auth)) return { success: false, message: auth.error };
+
+  const supabase = await createClient();
+  if (!supabase) return { success: false, message: "Supabase not configured" };
+  
+  const schoolId = auth.schoolId;
+  let count = 0;
+
+  const { data: currentYear } = await supabase.from("academic_years").select("id").eq("school_id", schoolId).eq("is_current", true).single();
+  const { data: currentTerm } = await supabase.from("terms").select("id").eq("school_id", schoolId).eq("status", "active").single();
+
+  for (const s of students) {
+    try {
+      const year = new Date().getFullYear();
+      const seq = String(Math.floor(Math.random() * 9000) + 1000);
+      const admissionNumber = `EDU-${year}-${seq}`;
+
+      const { data: student, error: sErr } = await supabase.from("students").insert({
+        school_id: schoolId,
+        admission_number: admissionNumber,
+        full_name: s.fullName,
+        gender: s.gender || 'Male',
+        date_of_birth: s.dateOfBirth || '2010-01-01',
+        status: 'Active',
+        enrollment_date: new Date().toISOString().split('T')[0]
+      }).select("id").single();
+
+      if (sErr || !student) continue;
+
+      if (currentYear && s.classId) {
+        await supabase.from("student_class_history").insert({
+          student_id: student.id,
+          class_id: s.classId,
+          academic_year_id: currentYear.id,
+          is_current: true
+        });
+      }
+
+      const { data: guardian } = await supabase.from("guardians").insert({
+        full_name: s.guardianName || `${s.fullName} Parent`,
+        phone: s.guardianPhone || '0000000000',
+        relationship: s.guardianRelationship || 'Parent',
+        school_id: schoolId,
+        is_primary: true
+      }).select("id").single();
+
+      if (guardian) {
+        await supabase.from("student_guardians").insert({
+          student_id: student.id,
+          guardian_id: guardian.id
+        });
+      }
+
+      if (currentTerm && s.classId) {
+        const { data: fa } = await supabase.from("fee_assignments").select("id, amount").eq("term_id", currentTerm.id).eq("class_id", s.classId);
+        if (fa) {
+          const feeInserts = fa.map(f => ({
+            student_id: student.id,
+            fee_assignment_id: f.id,
+            amount_owed: f.amount,
+            amount_paid: 0,
+            status: 'Unpaid'
+          }));
+          await supabase.from("student_fees").insert(feeInserts);
+        }
+      }
+
+      count++;
+    } catch (e) {
+      console.error("Error importing student:", s.fullName, e);
+    }
+  }
+
+  return { success: true, message: `Successfully imported ${count} students`, data: { count } };
 }

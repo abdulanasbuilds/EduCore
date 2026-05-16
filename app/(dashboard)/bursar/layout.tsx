@@ -26,10 +26,13 @@ export default async function BursarLayout({
 
   const navLinks = [
     { href: "/bursar", label: "Dashboard" },
-    { href: "/bursar/fees/students", label: "Student Fees" },
-    { href: "/bursar/fees/setup", label: "Fee Setup" },
+    { href: "/bursar/payment", label: "Record Payment" },
+    { href: "/bursar/defaulters", label: "Fee Defaulters" },
+    { href: "/bursar/reports", label: "Collections Report" },
     { href: "/bursar/expenses", label: "Expenses" },
     { href: "/bursar/payroll", label: "Payroll" },
+    { href: "/bursar/finance", label: "Finance Overview" },
+    { href: "/bursar/profile", label: "My Profile" },
   ];
 
   return (

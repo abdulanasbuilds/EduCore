@@ -45,8 +45,10 @@ async function testSystem() {
   const protectedUrls = [
     { url: `http://localhost:${PORT}/admin`, name: 'Admin Dashboard' },
     { url: `http://localhost:${PORT}/teacher`, name: 'Teacher Dashboard' },
+    { url: `http://localhost:${PORT}/subject-teacher`, name: 'Subject Teacher Dashboard' },
     { url: `http://localhost:${PORT}/bursar`, name: 'Bursar Dashboard' },
     { url: `http://localhost:${PORT}/parent`, name: 'Parent Dashboard' },
+    { url: `http://localhost:${PORT}/student`, name: 'Student Dashboard' },
   ];
 
   console.log('\n🔒 Testing Protected Routes:');

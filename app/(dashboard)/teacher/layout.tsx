@@ -25,12 +25,13 @@ export default async function TeacherLayout({
   }
 
   const navLinks = [
-    { href: "/teacher", label: "Dashboard" },
-    { href: "/teacher/attendance", label: "Attendance" },
-    { href: "/teacher/grades", label: "Grades" },
+    { href: "/teacher", label: "My Dashboard" },
+    { href: "/teacher/attendance", label: "Attendance — Mark Today" },
+    { href: "/teacher/grades", label: "Grades — Enter Grades" },
+    { href: "/teacher/assignments", label: "Homework — Assignments" },
     { href: "/teacher/timetable", label: "Timetable" },
-    { href: "/teacher/assignments", label: "Assignments" },
-    { href: "/teacher/events", label: "Events" },
+    { href: "/teacher/announcements", label: "Announcements" },
+    { href: "/teacher/profile", label: "My Profile" },
   ];
 
   return (

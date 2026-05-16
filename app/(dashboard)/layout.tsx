@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-
+import { DemoBanner } from "@/components/shared/DemoBanner";
 export default async function DashboardLayout({
   children,
 }: {
@@ -14,5 +14,10 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      <DemoBanner />
+      {children}
+    </>
+  );
 }

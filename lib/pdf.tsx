@@ -225,7 +225,7 @@ export async function generateReportCardPDF(data: PDFDocumentData): Promise<Buff
               <Text style={{ textAlign: 'center', fontSize: 9 }}>Class Teacher Signature</Text>
            </View>
            <View style={{ borderTopWidth: 1, borderTopColor: '#000', width: 150, paddingTop: 5 }}>
-              <Text style={{ textAlign: 'center', fontSize: 9 }}>Principal's Stamp & Sign</Text>
+              <Text style={{ textAlign: 'center', fontSize: 9 }}>Principal&apos;s Stamp &amp; Sign</Text>
            </View>
         </View>
 

@@ -8,6 +8,7 @@ import {
   AlertTriangle, CheckCircle2, Users, Calendar as CalendarIcon, 
   Send, Edit, Search
 } from "lucide-react";
+import AdminLoading from "../admin/loading";
 import {
   flexRender,
   getCoreRowModel,
@@ -105,18 +106,10 @@ export default function TeacherDashboardPage() {
         .eq("class_id", myClass.id);
         
       let pendingGradesCount = 0;
-      const upcomingAss = [];
+      const upcomingAss: any[] = [];
       if (assessments) {
-        // Just approximate: if date < today and not published (we don't have is_published in the select above, let's fetch it)
-        const { data: assDetail } = await supabase
-          .from("assessments")
-          .select("id, title, date, max_score, is_published, subjects(name)")
-          .eq("class_id", myClass.id);
-          
-        if (assDetail) {
-          pendingGradesCount = assDetail.filter(a => !a.is_published && a.date <= todayStr).length;
-          upcomingAss.push(...assDetail.filter(a => a.date >= todayStr).slice(0, 5));
-        }
+        pendingGradesCount = assessments.filter(a => !a.is_published && a.date <= todayStr).length;
+        upcomingAss.push(...assessments.filter(a => a.date >= todayStr).slice(0, 5));
       }
 
       // Students Table Data Construction
@@ -217,7 +210,7 @@ export default function TeacherDashboardPage() {
     getFilteredRowModel: getFilteredRowModel(),
   });
 
-  if (loading) return <div className="p-6 text-center text-slate-500">Loading dashboard...</div>;
+  if (loading) return <AdminLoading />;
   if (!data?.myClass) return <div className="p-6 text-center text-amber-600 bg-amber-50 rounded-lg">You are not assigned as a class teacher to any class.</div>;
 
   const { profile, currentTerm, myClass, stats, upcomingAss } = data;

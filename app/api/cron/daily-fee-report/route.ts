@@ -37,7 +37,7 @@ export async function GET(req: Request) {
       payment_method,
       receipt_number,
       student_id,
-      students!inner(full_name)
+      students!inner(full_name, school_id)
     `)
     .eq('payment_date', todayStr);
 
@@ -86,9 +86,12 @@ ${studentsList}
 Term Total So Far: ${formatGhs(termTotal)}
 — School Fee Report`;
 
+  const schoolId = payments[0].students.school_id;
+
   const adminWhatsApp = schoolConfig.whatsapp;
   if (adminWhatsApp) {
     await sendWhatsApp({
+      schoolId,
       to: adminWhatsApp,
       message,
       recipientName: 'School Admin',

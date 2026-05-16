@@ -8,6 +8,7 @@ import {
   Home, BookOpen, Calendar as CalendarIcon, Wallet, Bell, Download, ChevronDown, User, AlertTriangle, CheckCircle2 
 } from "lucide-react";
 import Link from "next/link";
+import AdminLoading from "../admin/loading";
 
 export const dynamic = 'force-dynamic';
 
@@ -173,7 +174,7 @@ export default function ParentDashboardPage() {
     loadDashboard();
   }, [supabase, selectedChildId]);
 
-  if (loading) return <div className="p-6 text-center text-slate-500">Loading...</div>;
+  if (loading) return <AdminLoading />;
   if (data?.children?.length === 0) return <div className="p-6 text-center font-bold text-amber-600 bg-amber-50 m-4 rounded-xl">No active children found linked to your account. Please contact the school.</div>;
 
   const { profile, children, activeChild, currentTerm, weekAtt, termAttPercent, absenceWarning, grades, feeBalance, feeDueDate, announcement, events } = data;

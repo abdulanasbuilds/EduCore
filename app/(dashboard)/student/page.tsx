@@ -7,6 +7,7 @@ import {
   BookOpen, Clock, Calendar as CalendarIcon, CheckCircle2, AlertTriangle 
 } from "lucide-react";
 import Link from "next/link";
+import AdminLoading from "../admin/loading";
 
 export const dynamic = 'force-dynamic';
 
@@ -141,7 +142,7 @@ export default function StudentDashboardPage() {
     loadDashboard();
   }, [supabase]);
 
-  if (loading) return <div className="p-6 text-center text-slate-500">Loading...</div>;
+  if (loading) return <AdminLoading />;
   if (!data?.student) return <div className="p-6 text-center text-amber-600 bg-amber-50">Student record not found. Please contact administration.</div>;
 
   const { profile, currentTerm, student, pendingHomework, overdueHomework, recentGrades, attendance, subjectsList } = data;

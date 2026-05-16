@@ -6,13 +6,34 @@ import { format } from "date-fns";
 import Link from "next/link";
 import { Users, AlertTriangle, CheckCircle2, Wallet, Calendar, Bell, ArrowRight } from "lucide-react";
 import { AttendanceTrendChart, FeesByWeekChart } from "@/components/admin/dashboard-charts";
+import AdminLoading from "./loading";
 
 export const dynamic = 'force-dynamic';
+
+interface DashboardData {
+  profile: any;
+  currentTerm: any;
+  stats: {
+    presentCount: number;
+    totalAttRecords: number;
+    absentCount: number;
+    totalCollected: number;
+    totalOutstanding: number;
+    outstandingParentsCount: number;
+    totalStudents: number;
+    breakdown: Record<string, number>;
+  };
+  alerts: any[];
+  attChartData: any[];
+  feeChartData: any[];
+  feed: any[];
+  events: any[];
+}
 
 export default function AdminDashboardPage() {
   const supabase = createClient();
   const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<DashboardData | null>(null);
 
   useEffect(() => {
     async function loadDashboard() {
@@ -46,7 +67,8 @@ export default function AdminDashboardPage() {
       const { data: attendanceToday } = await supabase
         .from("attendance")
         .select("status")
-        .eq("date", todayStr);
+        .eq("date", todayStr)
+        .filter("student_id", "in", `(SELECT id FROM students WHERE school_id = '${schoolId}')`);
 
       if (attendanceToday) {
         totalAttRecords = attendanceToday.length;
@@ -140,7 +162,8 @@ export default function AdminDashboardPage() {
       // ACTIVITY FEED
       const { data: recentPayments } = await supabase
         .from("fee_payments")
-        .select("id, amount, created_at, students(full_name)")
+        .select("id, amount, created_at, students!inner(full_name)")
+        .eq("students.school_id", schoolId)
         .order("created_at", { ascending: false })
         .limit(5);
 
@@ -178,7 +201,7 @@ export default function AdminDashboardPage() {
     loadDashboard();
   }, [supabase]);
 
-  if (loading) return <div className="p-6 text-center text-slate-500">Loading dashboard...</div>;
+  if (loading) return <AdminLoading />;
 
   const { profile, currentTerm, stats, alerts, attChartData, feeChartData, feed, events } = data;
 

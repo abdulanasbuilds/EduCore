@@ -14,11 +14,11 @@ interface PaymentNotificationParams {
 }
 
 export async function sendPaymentReceiptNotification(params: PaymentNotificationParams) {
-  const supabase = createAdminClient() as any;
+  const supabase = createAdminClient();
 
   const { data: guardians } = await supabase
     .from("guardians")
-    .select("id, full_name, phone, whatsapp_number, is_primary")
+    .select("id, full_name, phone, whatsapp_number, is_primary, school_id")
     .eq("student_id", params.studentId)
     .order("is_primary", { ascending: false })
     .limit(1);
@@ -47,6 +47,7 @@ export async function sendPaymentReceiptNotification(params: PaymentNotification
   });
 
   const waResult = await sendWhatsApp({
+    schoolId: guardian.school_id,
     to: phone,
     message,
     recipientName: guardian.full_name,
@@ -55,6 +56,7 @@ export async function sendPaymentReceiptNotification(params: PaymentNotification
 
   if (!waResult.success) {
     await sendSMS({
+      schoolId: guardian.school_id,
       to: phone,
       message,
       recipientName: guardian.full_name,

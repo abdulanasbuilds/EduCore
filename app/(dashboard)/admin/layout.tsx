@@ -2,13 +2,15 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { AdminShell } from "@/components/admin/admin-shell";
 
+export const dynamic = 'force-dynamic';
+
 export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const supabase = await createClient();
-  const { data: { user } } = await (supabase.auth as any).getUser();
+  const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) redirect("/login");
 

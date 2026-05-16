@@ -12,13 +12,24 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
+import SubjectTeacherLoading from "./loading";
 
 export const dynamic = 'force-dynamic';
+
+interface SubjectTeacherData {
+  profile: any;
+  uniqueSubjects: string;
+  classSubjects: any[];
+  tableData: any[];
+  pendingList: any[];
+  myAssessments: any[];
+  chartData: any[];
+}
 
 export default function SubjectTeacherDashboard() {
   const supabase = createClient();
   const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<SubjectTeacherData | null>(null);
   
   // Grade Entry State
   const [selectedClass, setSelectedClass] = useState("");
@@ -238,7 +249,7 @@ export default function SubjectTeacherDashboard() {
     getCoreRowModel: getCoreRowModel(),
   });
 
-  if (loading) return <div className="p-6 text-center text-slate-500">Loading dashboard...</div>;
+  if (loading) return <SubjectTeacherLoading />;
   if (!data?.classSubjects?.length) return <div className="p-6 text-center text-amber-600 bg-amber-50 rounded-lg">You are not assigned to teach any subjects.</div>;
 
   const { profile, uniqueSubjects, pendingList, myAssessments, chartData } = data;

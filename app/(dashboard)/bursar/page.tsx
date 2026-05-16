@@ -16,6 +16,7 @@ import {
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from "recharts";
+import AdminLoading from "../admin/loading";
 
 export const dynamic = 'force-dynamic';
 
@@ -63,8 +64,9 @@ export default function BursarDashboardPage() {
       // Student Fees Data (Term)
       const { data: studentFees } = await supabase
         .from("student_fees")
-        .select("id, student_id, amount_owed, amount_paid, balance, status, students(full_name, admission_number, student_class_history(class_id, classes(name)))")
-        .in("fee_assignment_id", assignmentIds);
+        .select("id, student_id, amount_owed, amount_paid, balance, status, students!inner(full_name, admission_number, school_id, student_class_history(class_id, classes(name)))")
+        .in("fee_assignment_id", assignmentIds)
+        .eq("students.school_id", schoolId);
 
       let termTarget = 0;
       let termCollected = 0;
@@ -208,7 +210,7 @@ export default function BursarDashboardPage() {
   ];
   const paymentTable = useReactTable({ data: data?.recentPayments || [], columns: paymentCols, getCoreRowModel: getCoreRowModel() });
 
-  if (loading) return <div className="p-6 text-center text-slate-500">Loading dashboard...</div>;
+  if (loading) return <AdminLoading />;
 
   const { profile, currentTerm, stats, chartData } = data;
   const isOverdue = currentTerm && new Date(currentTerm.fee_due_date) < new Date();

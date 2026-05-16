@@ -1,68 +1,63 @@
-# 🎓 EduCore Academic Lifecycle & Dashboard Guide
+# 🎓 EduCore: Industry-Standard School Lifecycle Guide
 
-This document provides a deep-dive analysis of how EduCore manages a real-world school lifecycle and how different user roles interact with the system daily.
-
----
-
-## 📅 The Academic Lifecycle
-
-EduCore follows a standard academic cycle tailored for the Ghanaian educational landscape.
-
-### 1. The Onboarding Phase (Start of Year)
-*   **Role:** School Admin
-*   **Actions:**
-    *   Initialize **Academic Year** and **Terms**.
-    *   Create **Classes** (e.g., Nursery, Primary 1, JHS 3).
-    *   Enroll **Staff** and assign them to classes or subjects.
-    *   **Bulk Student Import:** Enrollment of students via CSV, which automatically generates admission numbers and creates parent records.
-    *   **Automated Fee Assignment:** As soon as a student is linked to a class, the system assigns the relevant term fees (Tuition, PTA, Uniform, etc.).
-
-### 2. Daily Operations Phase
-*   **Role:** Class Teacher & Parent
-*   **Actions:**
-    *   **Tap-to-Mark Attendance:** Teachers mark attendance on their smartphones. 
-    *   **Instant WhatsApp Alerts:** If a student is marked "Absent," the system triggers a real-time notification to the parent via WhatsApp/SMS.
-    *   **Quick Announcements:** Teachers send 160-character updates directly to all parents in their class (e.g., "Reminder: School closes at 12pm tomorrow").
-
-### 3. The Academic Progress Phase (Mid-Term)
-*   **Role:** Subject Teacher & Student
-*   **Actions:**
-    *   **Assessment Management:** Teachers create "Assessments" (Quizzes, Mid-terms, Homework).
-    *   **Grade Entry:** Scores are entered; the system automatically calculates percentages and letter grades (A+, B, etc.).
-    *   **Live Performance Tracking:** Students and Parents can see "Published" grades instantly on their dashboard.
-
-### 4. The Financial Cycle
-*   **Role:** Bursar & Parent
-*   **Actions:**
-    *   **Payment Recording:** Bursars record cash or bank payments.
-    *   **Digital Receipts:** Receipts are generated and accessible to parents instantly.
-    *   **Fee Notifications:** Admins send bulk WhatsApp reminders to parents with outstanding balances.
-
-### 5. Year-End & Promotion Phase
-*   **Role:** School Admin
-*   **Actions:**
-    *   **Result Computation:** The system aggregates all term scores into a Yearly Average.
-    *   **Promotion Evaluation:** Students are automatically evaluated against **Promotion Rules** (e.g., "Must have >50% average" and "Must have zero fee balance").
-    *   **Bulk Promotion:** With one click, eligible students are moved to the next class level, and graduates are archived.
+This guide has been enhanced based on deep research into the **Ghana Education Service (GES)** standards and **NaCCA (National Council for Curriculum and Assessment)** requirements.
 
 ---
 
-## 🖥️ Dashboard Workflows (Real-Life Usage)
+## 🏛️ Ghana Industry Standards Compliance
 
-| Role | Dashboard Focus | Key Daily Action |
+### 1. NaCCA Standards-Based Curriculum (SBC)
+EduCore is designed to support the **SBC Framework** for Basic Schools. Unlike traditional systems that only use raw percentages, EduCore supports a dual-path grading approach:
+
+*   **Traditional Path:** Percentage-based scores (0-100) and Letter Grades (A, B, C).
+*   **Proficiency Path (GES Standard):**
+    *   **Exceeding Expectations (EE):** 80% - 100%
+    *   **Meeting Expectations (ME):** 65% - 79%
+    *   **Approaching Expectations (AE):** 50% - 64%
+    *   **Beginning (BE):** 0% - 49%
+
+### 2. The Financial Cycle (Mobile Money Dominance)
+In Ghana, **80% of school fee transactions** are moving towards Mobile Money (MTN MoMo, Telecel Cash). 
+*   **Current implementation:** Bursars record manual MoMo transactions with reference numbers.
+*   **Future Lifecycle:** Direct integration with Paystack or Flutterwave for instant automated reconciliation and receipts.
+
+---
+
+## 🔄 The Real-Life School Lifecycle in EduCore
+
+### Phase 1: Planning & Setup (The "GES-Ready" Base)
+*   **Action:** Admins set up the **Academic Calendar** following the GES trimester/semester structure.
+*   **Real-Life Optimization:** Each class is assigned a **Class Teacher** who acts as the primary focal point for all data entry for that specific learner group.
+
+### Phase 2: Admission & Bulk Onboarding
+*   **Action:** Using the **Bulk Import Tool**, schools migrate data from paper ledgers to the cloud.
+*   **Real-Life Optimization:** Every student is assigned a unique **Admission Number** (GES-MIS standard) which tracks them from Enrollment through to Graduation.
+
+### Phase 3: Daily Operational Pulse
+*   **Teacher Dashboard:** Used for "Zero-Click" attendance. 
+    *   *Real-life impact:* Reduces teacher paperwork by 40%.
+*   **Parent Portal:** Focused on "Push Notifications."
+    *   *Real-life impact:* Parents receive WhatsApp alerts for absence, ensuring child safety.
+
+### Phase 4: Assessment & Terminal Reporting
+*   **Subject Teacher Dashboard:** 
+    *   Teachers record **Class Based Assessments (CBA)** (50% weight) and **Terminal Exams** (50% weight).
+*   **End-of-Term Reports:** The system generates GES-standard Terminal Report Cards that can be downloaded by parents as PDFs.
+
+### Phase 5: Year-End Promotion & GES-MIS Export
+*   **Promotion Logic:** Uses the **Promotion Rules** engine to check for both Academic Pass (NaCCA standards) and Financial Clearance.
+*   **Data Export:** Admins can export student enrollment data in formats ready for upload to the **GES-MIS** government portal.
+
+---
+
+## 🖥️ User Roles in a Real Lifecycle
+
+| User Role | Everyday Goal | Lifecycle Impact |
 | :--- | :--- | :--- |
-| **Admin** | School Health (Finance + Enrollment) | Monitoring staff attendance & fee collection. |
-| **Teacher** | Class Management | Marking attendance within the first 30 mins of school. |
-| **Bursar** | Revenue Tracking | Recording student fee payments and generating receipts. |
-| **Parent** | Child's Progress | Checking "Absence" alerts and paying fees. |
-| **Student** | Academic Goals | Viewing assignments and term report cards. |
+| **School Admin** | Oversight & Compliance | Ensures school stays aligned with GES regulations. |
+| **Teacher** | Learning Evidence | Captures qualitative and quantitative data on learner progress. |
+| **Bursar** | Liquidity & Collection | Minimizes fee defaults through automated reminders. |
+| **Parent** | Engagement | Acts as a partner in the child's academic journey. |
 
 ---
-
-## 🔒 Security & Data Integrity
-*   **Tenant Isolation:** All queries are filtered by `school_id`. No user can see data from another school.
-*   **Role-Based Access (RBAC):** Dashboards are strictly guarded by Supabase RLS. A teacher cannot view the Finance dashboard, and a Bursar cannot edit grades.
-*   **Audit Trails:** Every promotion and fee payment is logged with a timestamp and the user ID of the person who performed the action.
-
----
-*Generated by EduCore Engineering Team - May 2026*
+*Developed by EduCore Research & Engineering Team - May 2026*

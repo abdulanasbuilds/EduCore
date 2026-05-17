@@ -1,4 +1,4 @@
-﻿-- ==========================================
+-- ==========================================
 -- RLS HELPER FUNCTIONS
 -- ==========================================
 CREATE OR REPLACE FUNCTION auth_user_school_id()
@@ -869,7 +869,7 @@ VALUES
 ('f3a4b5c6-d5e6-7890-fabc-456789012347', '00000000-0000-0000-0000-000000000000', 'teacher2@brilliantacademy.edu.gh', crypt('Password123!', gen_salt('bf')), NOW(), '{"full_name":"Akua Sarpong","role":"class_teacher","school_id":"a1b2c3d4-e5f6-7890-abcd-ef1234567890"}'::jsonb, NOW(), NOW(), 'authenticated', 'authenticated', NOW()),
 ('f4a5b6c7-d5e6-7890-fabc-456789012348', '00000000-0000-0000-0000-000000000000', 'bursar@brilliantacademy.edu.gh', crypt('Password123!', gen_salt('bf')), NOW(), '{"full_name":"Yaw Osei","role":"bursar","school_id":"a1b2c3d4-e5f6-7890-abcd-ef1234567890"}'::jsonb, NOW(), NOW(), 'authenticated', 'authenticated', NOW()),
 ('f5a6b7c8-d5e6-7890-fabc-456789012349', '00000000-0000-0000-0000-000000000000', 'parent1@brilliantacademy.edu.gh', crypt('Password123!', gen_salt('bf')), NOW(), '{"full_name":"Yaw Frimpong","role":"parent","school_id":"a1b2c3d4-e5f6-7890-abcd-ef1234567890"}'::jsonb, NOW(), NOW(), 'authenticated', 'authenticated', NOW()),
-('s1a2b3c4-d5e6-7890-fabc-456789012350', '00000000-0000-0000-0000-000000000000', 'student1@brilliantacademy.edu.gh', crypt('Password123!', gen_salt('bf')), NOW(), '{"full_name":"Kwesi Agyemang","role":"student","school_id":"a1b2c3d4-e5f6-7890-abcd-ef1234567890"}'::jsonb, NOW(), NOW(), 'authenticated', 'authenticated', NOW());
+('f1a2b3c4-d5e6-7890-fabc-456789012350', '00000000-0000-0000-0000-000000000000', 'student1@brilliantacademy.edu.gh', crypt('Password123!', gen_salt('bf')), NOW(), '{"full_name":"Kwesi Agyemang","role":"student","school_id":"a1b2c3d4-e5f6-7890-abcd-ef1234567890"}'::jsonb, NOW(), NOW(), 'authenticated', 'authenticated', NOW());
 
 -- Update auto-created profiles
 UPDATE profiles SET phone = '+233201234501', is_active = true WHERE id = 'f1a2b3c4-d5e6-7890-fabc-456789012345';
@@ -877,7 +877,7 @@ UPDATE profiles SET phone = '+233201234502', is_active = true WHERE id = 'f2a3b4
 UPDATE profiles SET phone = '+233201234503', is_active = true WHERE id = 'f3a4b5c6-d5e6-7890-fabc-456789012347';
 UPDATE profiles SET phone = '+233201234504', is_active = true WHERE id = 'f4a5b6c7-d5e6-7890-fabc-456789012348';
 UPDATE profiles SET phone = '+233201234505', is_active = true WHERE id = 'f5a6b7c8-d5e6-7890-fabc-456789012349';
-UPDATE profiles SET phone = '+233201234506', is_active = true WHERE id = 's1a2b3c4-d5e6-7890-fabc-456789012350';
+UPDATE profiles SET phone = '+233201234506', is_active = true WHERE id = 'f1a2b3c4-d5e6-7890-fabc-456789012350';
 
 -- ==========================================
 -- 3. ACADEMIC YEAR & TERMS
@@ -940,7 +940,7 @@ INSERT INTO students (id, school_id, admission_number, full_name, date_of_birth,
 ('s0000001-0000-0000-0000-000000000007', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'BA-2025-007', 'Akosua Darko', '2016-02-18', 'Female', '2025-01-13', 'Active'),
 ('s0000001-0000-0000-0000-000000000008', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'BA-2025-008', 'Nana Adjei', '2016-06-25', 'Male', '2025-01-13', 'Active'),
 ('s0000001-0000-0000-0000-000000000009', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'BA-2025-009', 'Ama Nyarkah', '2016-09-14', 'Female', '2025-01-13', 'Active'),
-('s1a2b3c4-d5e6-7890-fabc-456789012350', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'BA-2025-010', 'Kwesi Agyemang', '2015-04-20', 'Male', '2025-01-13', 'Active'),
+('f1a2b3c4-d5e6-7890-fabc-456789012350', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'BA-2025-010', 'Kwesi Agyemang', '2015-04-20', 'Male', '2025-01-13', 'Active'),
 ('s0000001-0000-0000-0000-000000000010', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'BA-2025-011', 'Adwoa Baah', '2015-08-10', 'Female', '2025-01-13', 'Active'),
 ('s0000001-0000-0000-0000-000000000011', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'BA-2025-012', 'Kweku Tetteh', '2015-12-01', 'Male', '2025-01-13', 'Active'),
 ('s0000001-0000-0000-0000-000000000012', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'BA-2025-013', 'Ama Kusi', '2015-10-22', 'Female', '2025-01-13', 'Active'),
@@ -978,7 +978,7 @@ SELECT gen_random_uuid(), id,
     WHEN id = 's0000001-0000-0000-0000-000000000007' THEN 'd3e4f5a6-b5c6-7890-defa-234567890125'
     WHEN id = 's0000001-0000-0000-0000-000000000008' THEN 'd3e4f5a6-b5c6-7890-defa-234567890125'
     WHEN id = 's0000001-0000-0000-0000-000000000009' THEN 'd3e4f5a6-b5c6-7890-defa-234567890125'
-    WHEN id = 's1a2b3c4-d5e6-7890-fabc-456789012350' THEN 'd4e5f6a7-b5c6-7890-defa-234567890126'
+    WHEN id = 'f1a2b3c4-d5e6-7890-fabc-456789012350' THEN 'd4e5f6a7-b5c6-7890-defa-234567890126'
     WHEN id = 's0000001-0000-0000-0000-000000000010' THEN 'd4e5f6a7-b5c6-7890-defa-234567890126'
     WHEN id = 's0000001-0000-0000-0000-000000000011' THEN 'd4e5f6a7-b5c6-7890-defa-234567890126'
     WHEN id = 's0000001-0000-0000-0000-000000000012' THEN 'd4e5f6a7-b5c6-7890-defa-234567890126'
@@ -1030,7 +1030,7 @@ ON CONFLICT (id) DO NOTHING;
 -- ==========================================
 INSERT INTO student_guardians (student_id, guardian_id) VALUES
 -- Guardian #1 (Yaw Frimpong): Kwesi Agyemang, Kofi Boateng, Nana Kwame
-('s1a2b3c4-d5e6-7890-fabc-456789012350', 'g0000001-0000-0000-0000-000000000001'),
+('f1a2b3c4-d5e6-7890-fabc-456789012350', 'g0000001-0000-0000-0000-000000000001'),
 ('s0000001-0000-0000-0000-000000000004', 'g0000001-0000-0000-0000-000000000001'),
 ('s0000001-0000-0000-0000-000000000019', 'g0000001-0000-0000-0000-000000000001'),
 -- Guardian #2 (Akua Mensah): Ama Serwah, Efua Mensah
@@ -1401,7 +1401,7 @@ INSERT INTO behavior_categories (id, school_id, name, type, severity, notify_par
 -- 24. BEHAVIOR LOGS (6: 3 positive, 3 negative)
 -- ==========================================
 INSERT INTO behavior_logs (id, school_id, student_id, category_id, description, type, severity, date, logged_by, parent_notified, notification_sent_at) VALUES
-(gen_random_uuid(), 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 's1a2b3c4-d5e6-7890-fabc-456789012350', (SELECT id FROM behavior_categories WHERE name = 'Excellent' LIMIT 1), 'Top score in Math Class Test - demonstrated exceptional problem-solving skills', 'positive', 3, '2025-01-28', 'f2a3b4c5-d5e6-7890-fabc-456789012346', false, NULL),
+(gen_random_uuid(), 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'f1a2b3c4-d5e6-7890-fabc-456789012350', (SELECT id FROM behavior_categories WHERE name = 'Excellent' LIMIT 1), 'Top score in Math Class Test - demonstrated exceptional problem-solving skills', 'positive', 3, '2025-01-28', 'f2a3b4c5-d5e6-7890-fabc-456789012346', false, NULL),
 (gen_random_uuid(), 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 's0000001-0000-0000-0000-000000000010', (SELECT id FROM behavior_categories WHERE name = 'Good Conduct' LIMIT 1), 'Helped organize classroom materials without being asked', 'positive', 2, '2025-01-30', 'f2a3b4c5-d5e6-7890-fabc-456789012346', false, NULL),
 (gen_random_uuid(), 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 's0000001-0000-0000-0000-000000000019', (SELECT id FROM behavior_categories WHERE name = 'Good Conduct' LIMIT 1), 'Assisted a fellow student who was struggling with classwork', 'positive', 2, '2025-02-03', 'f3a4b5c6-d5e6-7890-fabc-456789012347', false, NULL),
 (gen_random_uuid(), 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 's0000001-0000-0000-0000-000000000011', (SELECT id FROM behavior_categories WHERE name = 'Minor Infraction' LIMIT 1), 'Disrupted class by talking during lesson after multiple warnings', 'negative', 1, '2025-02-05', 'f2a3b4c5-d5e6-7890-fabc-456789012346', true, '2025-02-05 15:30:00+00'),

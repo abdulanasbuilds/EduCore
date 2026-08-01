@@ -42,7 +42,7 @@ export default function ParentRegistrationPage() {
     setSuccess(null);
 
     const result = await registerParentAction(data);
-    
+
     if (result.success) {
       setSuccess(result.message);
       // Give them a moment to read the success message before redirecting
@@ -88,7 +88,7 @@ export default function ParentRegistrationPage() {
           <div className="bg-slate-50 p-4 rounded-lg border space-y-4">
             <h3 className="font-semibold text-sm text-slate-700">1. Student Information</h3>
             <p className="text-xs text-slate-500 mb-2">We use this to find and link your child's records.</p>
-            
+
             <div className="space-y-2">
               <Label htmlFor="studentAdmissionNumber">Admission Number</Label>
               <Input
@@ -114,7 +114,7 @@ export default function ParentRegistrationPage() {
 
           <div className="bg-slate-50 p-4 rounded-lg border space-y-4">
             <h3 className="font-semibold text-sm text-slate-700">2. Your Information</h3>
-            
+
             <div className="space-y-2">
               <Label htmlFor="parentFullName">Your Full Name</Label>
               <Input
@@ -180,8 +180,8 @@ export default function ParentRegistrationPage() {
           </div>
         </div>
 
-        <Button 
-          type="submit" 
+        <Button
+          type="submit"
           className="w-full bg-primary-700 hover:bg-primary-800 h-11"
           disabled={isSubmitting || !!success}
         >

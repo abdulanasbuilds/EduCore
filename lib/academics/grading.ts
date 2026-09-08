@@ -21,7 +21,7 @@ export function getGradeLetter(scorePercent: number, scale = DEFAULT_LETTER_SCAL
 }
 
 export function calculateWeightedPercentage(
-  items: Array<{ score: number; maxScore: number; weight: number }>
+  items: Array<{ score: number; maxScore: number; weight: number; group?: string }>
 ): number {
   const valid = items.filter(
     (item) =>
@@ -31,15 +31,23 @@ export function calculateWeightedPercentage(
       Number.isFinite(item.weight) &&
       item.weight > 0
   );
-
   if (!valid.length) return 0;
 
-  const totalWeight = valid.reduce((sum, item) => sum + item.weight, 0);
+  const groups = new Map<string, { percentages: number[]; weight: number }>();
+  valid.forEach((item, index) => {
+    const key = item.group || `item-${index}`;
+    const entry = groups.get(key) || { percentages: [], weight: item.weight };
+    entry.percentages.push((item.score / item.maxScore) * 100);
+    entry.weight = item.weight;
+    groups.set(key, entry);
+  });
+
+  const totalWeight = [...groups.values()].reduce((sum, group) => sum + group.weight, 0);
   if (totalWeight <= 0) return 0;
 
-  const weighted = valid.reduce((sum, item) => {
-    const percentage = (item.score / item.maxScore) * 100;
-    return sum + percentage * item.weight;
+  const weighted = [...groups.values()].reduce((sum, group) => {
+    const componentAverage = group.percentages.reduce((a, b) => a + b, 0) / group.percentages.length;
+    return sum + componentAverage * group.weight;
   }, 0);
 
   return Math.round((weighted / totalWeight) * 100) / 100;

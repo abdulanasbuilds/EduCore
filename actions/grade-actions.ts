@@ -17,56 +17,32 @@ const assessmentSchema = z.object({
   maxScore: z.number().positive("Max score must be positive"),
 });
 
-export async function createAssessmentAction(
-  formData: z.infer<typeof assessmentSchema>
-): Promise<ActionResponse<{ assessmentId: string }>> {
+export async function createAssessmentAction(formData: z.infer<typeof assessmentSchema>): Promise<ActionResponse<{ assessmentId: string }>> {
   try {
     const parsed = assessmentSchema.safeParse(formData);
-    if (!parsed.success) {
-      return { success: false, message: "Validation failed" };
-    }
-
+    if (!parsed.success) return { success: false, message: "Validation failed" };
     const data = parsed.data;
     const supabase = await createClient();
     if (!supabase) return { success: false, message: "Supabase not configured" };
     const { data: { user } } = await (supabase.auth as any).getUser();
     if (!user) return { success: false, message: "Unauthorized" };
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role, school_id")
-      .eq("id", user.id)
-      .single();
-
-    if (!profile?.school_id || !["school_admin", "class_teacher", "subject_teacher"].includes(profile.role)) {
+    const { data: profile } = await supabase.from("profiles").select("role, school_id, is_active").eq("id", user.id).single();
+    if (!profile?.school_id || !profile.is_active || !["school_admin", "class_teacher", "subject_teacher"].includes(profile.role)) {
       return { success: false, message: "Unauthorized: Only teachers and admins can create assessments" };
     }
-
-    const { data: assessment, error } = await supabase
-      .from("assessments")
-      .insert({
-        term_id: data.termId,
-        class_id: data.classId,
-        subject_id: data.subjectId,
-        assessment_type_id: data.assessmentTypeId,
-        title: data.title,
-        date: data.date,
-        max_score: data.maxScore,
-        is_published: false,
-        created_by: user.id,
-      })
-      .select("id")
-      .single();
-
-    if (error || !assessment) {
-      return { success: false, message: error?.message || "Failed to create assessment" };
-    }
-
-    return {
-      success: true,
-      message: "Assessment created successfully",
-      data: { assessmentId: assessment.id },
-    };
+    const { data: assessment, error } = await supabase.from("assessments").insert({
+      term_id: data.termId,
+      class_id: data.classId,
+      subject_id: data.subjectId,
+      assessment_type_id: data.assessmentTypeId,
+      title: data.title,
+      date: data.date,
+      max_score: data.maxScore,
+      is_published: false,
+      created_by: user.id,
+    }).select("id").single();
+    if (error || !assessment) return { success: false, message: error?.message || "Failed to create assessment" };
+    return { success: true, message: "Assessment created successfully", data: { assessmentId: assessment.id } };
   } catch {
     return { success: false, message: "An unexpected error occurred" };
   }
@@ -74,209 +50,86 @@ export async function createAssessmentAction(
 
 const gradeEntrySchema = z.object({
   assessmentId: z.string().uuid(),
-  grades: z.array(
-    z.object({
-      studentId: z.string().uuid(),
-      score: z.number().min(0).nullable(),
-      remarks: z.string().optional(),
-    })
-  ),
+  grades: z.array(z.object({ studentId: z.string().uuid(), score: z.number().min(0).nullable(), remarks: z.string().optional() })),
 });
 
-export async function submitGradesAction(
-  formData: z.infer<typeof gradeEntrySchema>
-): Promise<ActionResponse> {
+export async function submitGradesAction(formData: z.infer<typeof gradeEntrySchema>): Promise<ActionResponse> {
   try {
     const parsed = gradeEntrySchema.safeParse(formData);
-    if (!parsed.success) {
-      return { success: false, message: "Validation failed" };
-    }
-
+    if (!parsed.success) return { success: false, message: "Validation failed" };
     const data = parsed.data;
     const supabase = await createClient();
     if (!supabase) return { success: false, message: "Supabase not configured" };
     const { data: { user } } = await (supabase.auth as any).getUser();
     if (!user) return { success: false, message: "Unauthorized" };
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role, school_id")
-      .eq("id", user.id)
-      .single();
-
-    if (!profile?.school_id || !["school_admin", "class_teacher", "subject_teacher"].includes(profile.role)) {
+    const { data: profile } = await supabase.from("profiles").select("role, school_id, is_active").eq("id", user.id).single();
+    if (!profile?.school_id || !profile.is_active || !["school_admin", "class_teacher", "subject_teacher"].includes(profile.role)) {
       return { success: false, message: "Unauthorized: Only teachers and admins can submit grades" };
     }
-
-    // Get assessment max score for validation
-    const { data: assessment } = await supabase
-      .from("assessments")
-      .select("max_score")
-      .eq("id", data.assessmentId)
-      .single();
-
-    if (!assessment) {
-      return { success: false, message: "Assessment not found" };
-    }
-
-    // Validate scores
+    const { data: assessment } = await supabase.from("assessments").select("id, max_score, school_id").eq("id", data.assessmentId).single();
+    if (!assessment || assessment.school_id !== profile.school_id) return { success: false, message: "Assessment not found" };
     for (const grade of data.grades) {
-      if (grade.score !== null && grade.score > assessment.max_score) {
-        return { success: false, message: `Score cannot exceed ${assessment.max_score}` };
-      }
+      if (grade.score !== null && grade.score > assessment.max_score) return { success: false, message: `Score cannot exceed ${assessment.max_score}` };
     }
-
-    // Upsert grades
     for (const grade of data.grades) {
-      const { error } = await supabase
-        .from("grades")
-        .upsert(
-          {
-            assessment_id: data.assessmentId,
-            student_id: grade.studentId,
-            score: grade.score,
-            remarks: grade.remarks || null,
-          },
-          { onConflict: "assessment_id,student_id" }
-        );
-
-      if (error) {
-        return { success: false, message: `Failed to save grade: ${error.message}` };
-      }
+      const { error } = await supabase.from("grades").upsert({ assessment_id: data.assessmentId, student_id: grade.studentId, score: grade.score, remarks: grade.remarks || null }, { onConflict: "assessment_id,student_id" });
+      if (error) return { success: false, message: `Failed to save grade: ${error.message}` };
     }
-
-    return {
-      success: true,
-      message: `Grades saved for ${data.grades.length} students`,
-    };
+    return { success: true, message: `Grades saved for ${data.grades.length} students` };
   } catch {
     return { success: false, message: "An unexpected error occurred" };
   }
 }
 
-export async function publishAssessmentAction(
-  assessmentId: string
-): Promise<ActionResponse> {
+export async function publishAssessmentAction(assessmentId: string): Promise<ActionResponse> {
   try {
     const supabase = await createClient();
     if (!supabase) return { success: false, message: "Supabase not configured" };
     const { data: { user } } = await (supabase.auth as any).getUser();
     if (!user) return { success: false, message: "Unauthorized" };
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role, school_id")
-      .eq("id", user.id)
-      .single();
-
-    if (!profile?.school_id || !["school_admin", "class_teacher", "subject_teacher"].includes(profile.role)) {
-      return { success: false, message: "Unauthorized: Only teachers and admins can publish assessments" };
+    const { data: profile } = await supabase.from("profiles").select("role, school_id, is_active").eq("id", user.id).single();
+    if (!profile?.school_id || !profile.is_active || !["school_admin", "class_teacher", "subject_teacher"].includes(profile.role)) return { success: false, message: "Unauthorized" };
+    const { data: assessment, error } = await supabase.from("assessments").select("*, subjects(name), classes(name)").eq("id", assessmentId).eq("school_id", profile.school_id).single();
+    if (error || !assessment) return { success: false, message: "Assessment not found" };
+    const { error: publishError } = await supabase.from("assessments").update({ is_published: true, published_at: new Date().toISOString() }).eq("id", assessmentId).eq("school_id", profile.school_id);
+    if (publishError) return { success: false, message: publishError.message };
+    const { data: grades } = await supabase.from("grades").select("student_id, score").eq("assessment_id", assessmentId);
+    for (const grade of grades || []) {
+      if (grade.score === null) continue;
+      const { data: sg } = await supabase.from("student_guardians").select("guardians!inner(full_name, phone, whatsapp_number)").eq("student_id", grade.student_id).eq("guardians.is_primary", true).maybeSingle() as any;
+      const guardian = sg?.guardians;
+      if (!guardian?.phone && !guardian?.whatsapp_number) continue;
+      const { data: student } = await supabase.from("students").select("full_name").eq("id", grade.student_id).eq("school_id", profile.school_id).single();
+      const parentName = guardian.full_name || "Parent";
+      const phone = guardian.whatsapp_number || guardian.phone;
+      const max = assessment.max_score;
+      const pct = max > 0 ? Math.round((grade.score / max) * 100) : 0;
+      const gradeL = pct >= 90 ? "A+" : pct >= 80 ? "A" : pct >= 75 ? "B+" : pct >= 70 ? "B" : pct >= 65 ? "C+" : pct >= 60 ? "C" : pct >= 55 ? "D+" : pct >= 50 ? "D" : "F";
+      const portal = `${process.env.NEXT_PUBLIC_APP_URL}/parent/grades`;
+      const msg = gradePublished(parentName, student?.full_name || "", assessment.subjects?.name || "", grade.score, max, gradeL, portal);
+      const schoolId = profile.school_id;
+      sendWhatsApp({ schoolId, to: phone, message: msg, recipientName: parentName, type: "grade" }).catch(() => {});
+      if (features.smsEnabled) sendSMS({ schoolId, to: phone, message: msg, recipientName: parentName, type: "grade" }).catch(() => {});
     }
-
-    const { error } = await supabase
-      .from("assessments")
-      .update({
-        is_published: true,
-        published_at: new Date().toISOString(),
-      })
-      .eq("id", assessmentId);
-
-    if (error) return { success: false, message: error.message };
-
-     // For publishing assessments, we need to look up related data for notifications
-     const { data: assessment } = await supabase
-       .from("assessments")
-       .select("*, subjects(name), classes(name)")
-       .eq("id", assessmentId)
-       .single();
-
-     if (assessment) {
-       const { data: grades } = await supabase
-         .from("grades")
-         .select("student_id, score")
-         .eq("assessment_id", assessmentId);
-         
-       if (grades && grades.length > 0) {
-         for (const grade of grades) {
-           if (grade.score === null) continue;
-
-           // Correct join for primary guardian
-           const { data: sg } = await supabase
-             .from("student_guardians")
-             .select(`
-               guardians!inner (
-                 full_name, 
-                 phone, 
-                 whatsapp_number
-               )
-             `)
-             .eq("student_id", grade.student_id)
-             .eq("guardians.is_primary", true)
-             .maybeSingle() as any;
-
-           const g = sg?.guardians;
-           if (!g?.phone) continue;
-
-           const { data: student } = await supabase.from("students").select("full_name").eq("id", grade.student_id).single();
-           
-           const parentName = g.full_name || "Parent";
-           const phone = g.whatsapp_number || g.phone;
-           const score = grade.score;
-           const max = assessment.max_score;
-           const pct = Math.round((score / max) * 100);
-           const gradeL = pct >= 90 ? "A+" : pct >= 80 ? "A" : pct >= 70 ? "B" : pct >= 60 ? "C" : pct >= 50 ? "D" : "F";
-           const portal = `${process.env.NEXT_PUBLIC_APP_URL}/parent/grades`;
-           const msg = gradePublished(parentName, student?.full_name || "", assessment.subjects?.name || "", score, max, gradeL, portal);
-           
-           const schoolId = profile.school_id;
-           sendWhatsApp({ schoolId, to: phone, message: msg, recipientName: parentName, type: "grade" }).catch(() => {});
-           if (!features.smsEnabled) {
-             sendSMS({ schoolId, to: phone, message: msg, recipientName: parentName, type: "grade" }).catch(() => {});
-           }
-         }
-       }
-     }
-
     return { success: true, message: "Assessment published. Parents notified." };
   } catch {
     return { success: false, message: "An unexpected error occurred" };
   }
 }
 
-export async function deleteAssessmentAction(
-  assessmentId: string
-): Promise<ActionResponse> {
+export async function deleteAssessmentAction(assessmentId: string): Promise<ActionResponse> {
   try {
     const supabase = await createClient();
     if (!supabase) return { success: false, message: "Supabase not configured" };
     const { data: { user } } = await (supabase.auth as any).getUser();
     if (!user) return { success: false, message: "Unauthorized" };
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-
-    if (!["school_admin"].includes(profile?.role || "")) {
-      return { success: false, message: "Unauthorized: Only admins can delete assessments" };
-    }
-
-    // Check if grades exist
-    const { count } = await supabase
-      .from("grades")
-      .select("*", { count: "exact", head: true })
-      .eq("assessment_id", assessmentId);
-
-    if (count && count > 0) {
-      return { success: false, message: "Cannot delete assessment with existing grades" };
-    }
-
-    const { error } = await supabase
-      .from("assessments")
-      .delete()
-      .eq("id", assessmentId);
-
+    const { data: profile } = await supabase.from("profiles").select("role, school_id, is_active").eq("id", user.id).single();
+    if (!profile?.is_active || profile.role !== "school_admin" || !profile.school_id) return { success: false, message: "Unauthorized: Only admins can delete assessments" };
+    const { data: assessment } = await supabase.from("assessments").select("id, school_id").eq("id", assessmentId).eq("school_id", profile.school_id).single();
+    if (!assessment) return { success: false, message: "Assessment not found" };
+    const { count } = await supabase.from("grades").select("*", { count: "exact", head: true }).eq("assessment_id", assessmentId);
+    if (count && count > 0) return { success: false, message: "Cannot delete assessment with existing grades" };
+    const { error } = await supabase.from("assessments").delete().eq("id", assessmentId).eq("school_id", profile.school_id);
     if (error) return { success: false, message: error.message };
     return { success: true, message: "Assessment deleted" };
   } catch {

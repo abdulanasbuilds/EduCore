@@ -62,9 +62,9 @@ export const demoAnnouncements = [
 export const demoAttendanceTrend = [92, 94, 93, 96, 95, 94, 97, 96, 94, 95, 93, 96, 95, 94];
 export const demoFeeTrend = [48, 62, 71, 84, 95, 112];
 
-export const roleCopy: Record<DemoRole, { title: string; subtitle: string }> = {
-  admin: { title: "School Administration", subtitle: "A complete operational view of the school" },
-  teacher: { title: "Class Teacher Workspace", subtitle: "Attendance, grades and student progress" },
-  bursar: { title: "Finance & Bursary", subtitle: "Collections, balances, receipts and reporting" },
-  parent: { title: "Parent Portal", subtitle: "Your child's school life in one place" },
+export const roleLabels: Record<DemoRole, string> = {
+  admin: "Headmaster",
+  teacher: "Teacher",
+  bursar: "Bursar",
+  parent: "Parent",
 };
